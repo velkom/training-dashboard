@@ -1,0 +1,49 @@
+---
+description: Training Dashboard — conventions, architecture, and extension points
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Training Dashboard
+
+## Stack
+
+- Next.js 15 App Router, React 19, TypeScript strict
+- Tailwind CSS v4 + shadcn/ui (Base UI)
+- Zustand (UI + filter state), Recharts (charts), PapaParse (CSV)
+
+## Directory layout
+
+- `src/app/` — routes only; keep route components thin
+- `src/components/ui/` — shadcn primitives (do not business-logic here)
+- `src/components/dashboard|import|layout/` — feature UI
+- `src/lib/converters/` — one file per vendor format + `registry.ts`
+- `src/lib/storage/` — `WorkoutRepository` implementations (`local-repository.ts` today)
+- `src/types/` — domain types shared across UI and lib
+- `src/hooks/` — client hooks and Zustand stores
+
+## Domain model
+
+Normalized type is `WorkoutSession` in `src/types/workout.ts`. All importers must output this shape. Session `id` is deterministic (see `src/lib/dedup.ts`).
+
+## Adding a new import format
+
+1. Add `src/lib/converters/my-app.ts` exporting a `WorkoutConverter` (`name`, `id`, `detect`, `convert`).
+2. Register it in `src/lib/converters/registry.ts` (order: more specific detectors first).
+3. If `detect` cannot be reliable without reading file bytes, prefer filename rules or document manual override in UI.
+
+## Persistence
+
+Use `getWorkoutRepository()` from `src/lib/storage/index.ts`. MVP uses `localStorage`. Future: add `SupabaseWorkoutRepository` implementing the same `WorkoutRepository` interface — do not query `localStorage` from components.
+
+## Future integrations (stubs only until wired)
+
+- **Supabase auth**: add a session provider in `AppProviders`; gate routes when needed.
+- **RevenueCat**: gate premium widgets via a small `features` / `useSubscription` layer; keep free tier UI working without keys.
+
+## AI / maintainability
+
+- Prefer small files (<~200 lines); extract helpers over growing a single component.
+- Use explicit types; avoid `any`.
+- Add JSDoc on exported converter and repository public methods.
+- Run `npm run lint` and `npm run build` after non-trivial changes.

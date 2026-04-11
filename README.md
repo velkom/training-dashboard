@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Training Dashboard
 
-## Getting Started
+Web dashboard for workout history (CSV/JSON exports from mobile apps).
 
-First, run the development server:
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Use `npm install` on its own line (do not append `# …` on the same line—npm may treat `#` as a package name and error).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+If the dev server shows strange `ENOENT` errors under `.next/`, stop it, run `rm -rf .next`, then `npm run dev` again.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Learn More
+## Import
 
-To learn more about Next.js, take a look at the following resources:
+- **Hevy** — CSV export (one row per set). Muscle columns are read when present.
+- **Daily Strength / JSON** — array of sessions or `{ sessions }` / `{ workouts }`; with multiple files, `WorkoutSession.json` is preferred when present.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Re-importing the full history does not create duplicates: sessions match by stable `id`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Stack
 
-## Deploy on Vercel
+Next.js 15, TypeScript, Tailwind v4, shadcn/ui, Zustand, Recharts, PapaParse. Data is stored in `localStorage` via `WorkoutRepository`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command           | Description        |
+| ----------------- | ------------------ |
+| `npm run dev`     | Development server |
+| `npm run build`   | Production build   |
+| `npm run lint`    | ESLint             |
