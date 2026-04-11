@@ -355,7 +355,7 @@ export function emptyMuscleRecord(): Record<MuscleId, { sets: number; volume: nu
 export type TrainingStatus = "growing" | "maintaining" | "under";
 
 /** Thresholds: weekly effective sets */
-export const SETS_MAINTENANCE_MIN = 6;
+export const SETS_MAINTENANCE_MIN = 5;
 export const SETS_GROWTH_MIN = 10;
 export const SETS_ADVANCED_MIN = 15;
 
