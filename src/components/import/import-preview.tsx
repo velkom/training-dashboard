@@ -19,12 +19,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useWorkoutStore } from "@/hooks/use-workouts";
+import type { ImportParseNotes } from "@/lib/converters/types";
+import { useWorkoutStore } from "@/stores/workout-store";
 import type { WorkoutSession } from "@/types";
 
 type ImportPreviewProps = {
   sessions: WorkoutSession[];
   converterName: string;
+  parseNotes?: ImportParseNotes | null;
   onConfirm: () => Promise<void>;
   onBack: () => void;
   isSaving?: boolean;
@@ -33,6 +35,7 @@ type ImportPreviewProps = {
 export function ImportPreview({
   sessions,
   converterName,
+  parseNotes,
   onConfirm,
   onBack,
   isSaving,
@@ -68,6 +71,26 @@ export function ImportPreview({
             <p>Total in file: {sessions.length}</p>
             <p>New: {newCount}</p>
             <p>Already in library (duplicates): {duplicateCount}</p>
+            {parseNotes &&
+            (parseNotes.skippedEmptyRows > 0 ||
+              parseNotes.skippedMissingStartTime > 0) ? (
+              <div className="border-t border-border/60 pt-2 text-muted-foreground">
+                {parseNotes.skippedEmptyRows > 0 ? (
+                  <p>
+                    Removed {parseNotes.skippedEmptyRows} empty row
+                    {parseNotes.skippedEmptyRows === 1 ? "" : "s"} (no data in
+                    columns).
+                  </p>
+                ) : null}
+                {parseNotes.skippedMissingStartTime > 0 ? (
+                  <p>
+                    Skipped {parseNotes.skippedMissingStartTime} row
+                    {parseNotes.skippedMissingStartTime === 1 ? "" : "s"} with
+                    no valid workout date.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </AlertDescription>
         </Alert>
 

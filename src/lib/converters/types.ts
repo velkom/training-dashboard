@@ -1,5 +1,14 @@
 import type { UserId, WorkoutSession } from "@/types";
 
+import type { ImportParseNotes } from "./import-notes";
+
+export type { ImportParseNotes } from "./import-notes";
+
+export type ConverterConvertResult = {
+  sessions: WorkoutSession[];
+  parseNotes?: ImportParseNotes;
+};
+
 /**
  * Converts vendor export files into normalized {@link WorkoutSession} records.
  */
@@ -19,7 +28,7 @@ export type WorkoutConverter = {
   convert: (
     input: File | File[],
     userId: UserId,
-  ) => Promise<WorkoutSession[]>;
+  ) => Promise<ConverterConvertResult>;
 };
 
 export type { WorkoutSession as NormalizedWorkout } from "@/types";

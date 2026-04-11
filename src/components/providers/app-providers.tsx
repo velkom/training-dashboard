@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
-import { useWorkoutStore } from "@/hooks/use-workouts";
+import { useWorkoutStore } from "@/stores/workout-store";
 
 /**
  * Root client providers. Extend with SupabaseSessionProvider / RevenueCat when ready.

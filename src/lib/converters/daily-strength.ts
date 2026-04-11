@@ -320,11 +320,11 @@ export const dailyStrengthConverter: WorkoutConverter = {
       jsonFiles.find((f) => f.name.toLowerCase() === "workoutsession.json") ??
       jsonFiles.find((f) => f.name.toLowerCase().includes("workoutsession")) ??
       jsonFiles[0];
-    if (!preferred) return [];
+    if (!preferred) return { sessions: [] };
 
     const data = await readJsonFile(preferred);
     const raw = extractSessions(data);
-    if (!raw || raw.length === 0) return [];
+    if (!raw || raw.length === 0) return { sessions: [] };
 
     const sessions: Omit<WorkoutSession, "id">[] = raw.map((item) => {
       if (
@@ -341,6 +341,6 @@ export const dailyStrengthConverter: WorkoutConverter = {
       (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
     );
 
-    return assignSessionIds(sessions);
+    return { sessions: assignSessionIds(sessions) };
   },
 };

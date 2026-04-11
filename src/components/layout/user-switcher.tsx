@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useWorkoutStore } from "@/hooks/use-workouts";
+import { useWorkoutStore } from "@/stores/workout-store";
 import type { UserFilter } from "@/lib/workout-stats";
 import { cn } from "@/lib/utils";
 

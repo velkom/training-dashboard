@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useImportFlow } from "@/hooks/use-import";
-import { useSelectedUser, useWorkoutStore } from "@/hooks/use-workouts";
+import { useSelectedUser, useWorkoutStore } from "@/stores/workout-store";
 import type { UserId } from "@/types";
 
 export default function ImportPage() {
@@ -143,6 +143,7 @@ export default function ImportPage() {
         <ImportPreview
           sessions={flow.preview}
           converterName={flow.activeConverter?.name ?? "—"}
+          parseNotes={flow.parseNotes}
           isSaving={saving}
           onBack={() => flow.setStep("pick_files")}
           onConfirm={async () => {

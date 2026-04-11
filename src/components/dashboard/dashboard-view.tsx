@@ -11,7 +11,7 @@ import { VolumeChart } from "@/components/dashboard/volume-chart";
 import { WeekNavigator } from "@/components/dashboard/week-navigator";
 import { WeeklyGrowthSummary } from "@/components/dashboard/weekly-growth-summary";
 import { WorkoutCalendar } from "@/components/dashboard/workout-calendar";
-import { useSelectedUser, useWorkoutStore } from "@/hooks/use-workouts";
+import { useSelectedUser, useWorkoutStore } from "@/stores/workout-store";
 import {
   dailyMuscleSetsForWeek,
   filterSessions,

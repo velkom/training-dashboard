@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { convertWithDetection, detectConverter, listConverters } from "@/lib/converters";
-import type { WorkoutConverter } from "@/lib/converters/types";
+import type { ImportParseNotes, WorkoutConverter } from "@/lib/converters/types";
 import { expandFiles } from "@/lib/extract-files";
 import type { UserId, WorkoutSession } from "@/types";
 
@@ -19,6 +19,7 @@ export function useImportFlow(defaultUser: UserId = "nastya") {
   const [activeConverter, setActiveConverter] = useState<WorkoutConverter | null>(
     null,
   );
+  const [parseNotes, setParseNotes] = useState<ImportParseNotes | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expanding, setExpanding] = useState(false);
 
@@ -58,6 +59,7 @@ export function useImportFlow(defaultUser: UserId = "nastya") {
     setExpandedFiles([]);
     setPreview([]);
     setActiveConverter(null);
+    setParseNotes(null);
     setError(null);
     setConverterOverride(undefined);
   }, []);
@@ -73,13 +75,14 @@ export function useImportFlow(defaultUser: UserId = "nastya") {
       return;
     }
     try {
-      const { converter, sessions } = await convertWithDetection(
+      const { converter, sessions, parseNotes: notes } = await convertWithDetection(
         effectiveFiles,
         userId,
         converterOverride,
       );
       setActiveConverter(converter);
       setPreview(sessions);
+      setParseNotes(notes ?? null);
       setStep("preview");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Import failed");
@@ -99,6 +102,7 @@ export function useImportFlow(defaultUser: UserId = "nastya") {
     setConverterOverride,
     preview,
     activeConverter,
+    parseNotes,
     error,
     setError,
     detected,
