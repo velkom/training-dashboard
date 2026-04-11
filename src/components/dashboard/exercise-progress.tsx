@@ -94,7 +94,7 @@ export function ExerciseProgress({ sessions, user }: ExerciseProgressProps) {
         </div>
       </CardHeader>
       <CardContent className="h-72 min-h-72 min-w-0 text-primary">
-        <ChartMountGate className="h-full">
+        <ChartMountGate className="h-72 min-h-72 w-full min-w-0">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ left: 0, right: 8, top: 8 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />

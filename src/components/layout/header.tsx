@@ -10,6 +10,7 @@ export function AppHeader() {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
         <div className="flex items-center gap-6">
           <Link
+            prefetch={false}
             href="/"
             className="text-sm font-semibold tracking-tight text-foreground"
           >
@@ -17,18 +18,21 @@ export function AppHeader() {
           </Link>
           <nav className="flex items-center gap-1">
             <Link
+              prefetch={false}
               href="/"
               className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
             >
               Dashboard
             </Link>
             <Link
+              prefetch={false}
               href="/history"
               className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
             >
               History
             </Link>
             <Link
+              prefetch={false}
               href="/import"
               className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
             >

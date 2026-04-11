@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -34,17 +35,19 @@ export function UserSwitcher() {
         <ChevronsUpDown className="size-4 opacity-60" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuLabel>Profile</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {(Object.keys(LABELS) as UserFilter[]).map((id) => (
-          <DropdownMenuItem
-            key={id}
-            onClick={() => setSelectedUser(id)}
-            data-state={selectedUser === id ? "active" : undefined}
-          >
-            {LABELS[id]}
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Profile</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {(Object.keys(LABELS) as UserFilter[]).map((id) => (
+            <DropdownMenuItem
+              key={id}
+              onClick={() => setSelectedUser(id)}
+              data-state={selectedUser === id ? "active" : undefined}
+            >
+              {LABELS[id]}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

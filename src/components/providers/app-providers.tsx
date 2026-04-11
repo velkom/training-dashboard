@@ -12,6 +12,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   const refresh = useWorkoutStore((s) => s.refresh);
 
   useEffect(() => {
+    useWorkoutStore.persist.rehydrate();
     void refresh();
   }, [refresh]);
 

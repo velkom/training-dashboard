@@ -9,6 +9,14 @@ import type { UserId, WorkoutSession } from "@/types";
 
 export type UserFilter = UserId | "all";
 
+/** Format a local Date as YYYY-MM-DD without UTC conversion (avoids toISOString timezone shift). */
+export function toLocalDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export function filterSessions(
   sessions: WorkoutSession[],
   user: UserFilter,
@@ -60,7 +68,7 @@ export function getWeekStart(date: Date): string {
   const monday = new Date(d);
   monday.setDate(d.getDate() - diff);
   monday.setHours(0, 0, 0, 0);
-  return monday.toISOString().slice(0, 10);
+  return toLocalDateString(monday);
 }
 
 /** Sessions with `startDate` in [weekStart, weekStart + 7 days) (Monday-aligned week). */
@@ -101,7 +109,7 @@ export function weeklyVolume(
     const monday = new Date(d);
     monday.setDate(d.getDate() - diff);
     monday.setHours(0, 0, 0, 0);
-    const start = monday.toISOString().slice(0, 10);
+    const start = toLocalDateString(monday);
     buckets.push({ weekStart: start, volume: 0, sessions: 0 });
   }
 
@@ -126,7 +134,7 @@ export function currentStreakDays(sessions: WorkoutSession[]): number {
   const latest = [...days].sort((a, b) => b.localeCompare(a))[0]!;
   const cursor = new Date(`${latest}T12:00:00`);
   let streak = 0;
-  while (days.has(cursor.toISOString().slice(0, 10))) {
+  while (days.has(toLocalDateString(cursor))) {
     streak += 1;
     cursor.setDate(cursor.getDate() - 1);
   }
@@ -272,7 +280,7 @@ export function dailyMuscleSetsForWeek(
   for (let i = 0; i < 7; i++) {
     const d = new Date(weekStart + "T12:00:00");
     d.setDate(d.getDate() + i);
-    dates.push(d.toISOString().slice(0, 10));
+    dates.push(toLocalDateString(d));
   }
 
   const rows: DailyMuscleBreakdownDay[] = dates.map((date) => ({
@@ -318,7 +326,7 @@ export function weeklyMuscleSetsEndingAt(
     const d = new Date(endMonday);
     d.setDate(endMonday.getDate() - i * 7);
     d.setHours(0, 0, 0, 0);
-    const start = d.toISOString().slice(0, 10);
+    const start = toLocalDateString(d);
     buckets.push({ weekStart: start, muscles: emptyMuscleRecord() });
   }
 

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { filterSessions, workoutDates } from "@/lib/workout-stats";
+import { filterSessions, toLocalDateString, workoutDates } from "@/lib/workout-stats";
 import type { UserFilter } from "@/lib/workout-stats";
 import { cn } from "@/lib/utils";
 import type { WorkoutSession } from "@/types";
@@ -40,7 +40,7 @@ export function WorkoutCalendar({
       const col: { date: string; count: number }[] = [];
       for (let d = 0; d < 7; d++) {
         const cell = new Date(anchor + (w * 7 + d) * dayMs);
-        const key = cell.toISOString().slice(0, 10);
+        const key = toLocalDateString(cell);
         const count = counts.get(key) ?? 0;
         max = Math.max(max, count);
         col.push({ date: key, count });

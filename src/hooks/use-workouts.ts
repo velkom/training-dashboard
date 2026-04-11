@@ -58,6 +58,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
     {
       name: "training-dashboard:user",
       partialize: (state) => ({ selectedUser: state.selectedUser }),
+      skipHydration: true,
     },
   ),
 );
