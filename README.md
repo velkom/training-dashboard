@@ -33,3 +33,22 @@ Next.js 15, TypeScript, Tailwind v4, shadcn/ui, Zustand, Recharts, PapaParse. Da
 | `npm run dev`     | Development server |
 | `npm run build`   | Production build   |
 | `npm run lint`    | ESLint             |
+
+## Publish to GitHub
+
+Workout data stays in your browser (`localStorage`); only application code goes to the repo.
+
+**Option A — GitHub CLI** (install with `brew install gh`, then `gh auth login`):
+
+```bash
+gh repo create training-dashboard --public --source=. --remote=origin --push
+```
+
+**Option B — GitHub website**: create a new empty public repository named `training-dashboard`, then:
+
+```bash
+git remote add origin https://github.com/<your-username>/training-dashboard.git
+git push -u origin main
+```
+
+If `origin` already exists, use `git remote set-url origin <url>` instead of `add`.
