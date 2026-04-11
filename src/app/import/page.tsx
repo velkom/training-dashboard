@@ -143,6 +143,7 @@ export default function ImportPage() {
         <ImportPreview
           sessions={flow.preview}
           converterName={flow.activeConverter?.name ?? "—"}
+          parseNotes={flow.parseNotes}
           isSaving={saving}
           onBack={() => flow.setStep("pick_files")}
           onConfirm={async () => {

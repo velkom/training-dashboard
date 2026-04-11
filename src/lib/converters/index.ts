@@ -6,4 +6,8 @@ export {
 } from "./registry";
 export { dailyStrengthConverter } from "./daily-strength";
 export { hevyConverter } from "./hevy";
-export type { WorkoutConverter } from "./types";
+export type {
+  ConverterConvertResult,
+  ImportParseNotes,
+  WorkoutConverter,
+} from "./types";

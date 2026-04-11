@@ -2,7 +2,7 @@ import type { UserId, WorkoutSession } from "@/types";
 
 import { dailyStrengthConverter } from "./daily-strength";
 import { hevyConverter } from "./hevy";
-import type { WorkoutConverter } from "./types";
+import type { ImportParseNotes, WorkoutConverter } from "./types";
 
 /** Order matters: first confident match wins. */
 const converters: WorkoutConverter[] = [
@@ -31,12 +31,16 @@ export async function convertWithDetection(
   input: File | File[],
   userId: UserId,
   converterId?: string,
-): Promise<{ converter: WorkoutConverter; sessions: WorkoutSession[] }> {
+): Promise<{
+  converter: WorkoutConverter;
+  sessions: WorkoutSession[];
+  parseNotes?: ImportParseNotes;
+}> {
   const byId = converterId ? getConverterById(converterId) : undefined;
   const converter = byId ?? detectConverter(input);
   if (!converter) {
     throw new Error("Unsupported file format. Try CSV (Hevy) or JSON export.");
   }
-  const sessions = await converter.convert(input, userId);
-  return { converter, sessions };
+  const { sessions, parseNotes } = await converter.convert(input, userId);
+  return { converter, sessions, parseNotes };
 }
