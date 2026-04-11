@@ -27,7 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useSelectedUser, useWorkoutStore } from "@/hooks/use-workouts";
+import { useSelectedUser, useWorkoutStore } from "@/stores/workout-store";
 import { filterSessions } from "@/lib/workout-stats";
 import type { WorkoutSession } from "@/types";
 

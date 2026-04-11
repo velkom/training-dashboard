@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useWorkoutStore } from "@/hooks/use-workouts";
+import { useWorkoutStore } from "@/stores/workout-store";
 import type { WorkoutSession } from "@/types";
 
 type ImportPreviewProps = {
