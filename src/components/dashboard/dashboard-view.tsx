@@ -9,17 +9,16 @@ import { RecentWorkouts } from "@/components/dashboard/recent-workouts";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
 import { WeekNavigator } from "@/components/dashboard/week-navigator";
-import { WeeklyGrowthSummary } from "@/components/dashboard/weekly-growth-summary";
+import { WeeklyGrowthSummary } from "@/components/dashboard/growth";
 import { WorkoutCalendar } from "@/components/dashboard/workout-calendar";
-import { useSelectedUser, useWorkoutStore } from "@/stores/workout-store";
+import { useWeeklyMuscleStats } from "@/hooks/use-weekly-muscle-stats";
 import {
-  dailyMuscleSetsForWeek,
   filterSessions,
   filterSessionsByWeek,
   formatWeekRangeDisplay,
   getWeekStart,
-  weeklyMuscleBucketForWeek,
 } from "@/lib/workout-stats";
+import { useSelectedUser, useWorkoutStore } from "@/stores/workout-store";
 
 export function DashboardView() {
   const sessions = useWorkoutStore((s) => s.sessions);
@@ -40,15 +39,7 @@ export function DashboardView() {
     [scopedSessions, selectedWeek],
   );
 
-  const weekMuscleBucket = useMemo(
-    () => weeklyMuscleBucketForWeek(scopedSessions, selectedWeek),
-    [scopedSessions, selectedWeek],
-  );
-
-  const dailyBreakdown = useMemo(
-    () => dailyMuscleSetsForWeek(scopedSessions, selectedWeek),
-    [scopedSessions, selectedWeek],
-  );
+  const weeklyMuscleStats = useWeeklyMuscleStats(scopedSessions, selectedWeek);
 
   const weekLabel = formatWeekRangeDisplay(selectedWeek);
 
@@ -77,8 +68,7 @@ export function DashboardView() {
 
       <WeeklyGrowthSummary
         key={selectedWeek}
-        bucket={weekMuscleBucket}
-        dailyBreakdown={dailyBreakdown}
+        stats={weeklyMuscleStats}
       />
 
       <MuscleGroupCards

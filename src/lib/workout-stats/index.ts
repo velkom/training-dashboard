@@ -37,3 +37,12 @@ export {
   weeklyMuscleSets,
   weeklyMuscleSetsEndingAt,
 } from "./muscle-week-stats";
+export type {
+  ExerciseWeekRow,
+  MuscleGroupSummary,
+  WeeklyMuscleStats,
+} from "./weekly-muscle-stats-view";
+export {
+  buildMuscleExerciseRows,
+  computeWeeklyMuscleStats,
+} from "./weekly-muscle-stats-view";

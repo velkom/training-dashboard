@@ -8,9 +8,10 @@ import {
   MUSCLE_IDS,
   MUSCLE_LABELS,
   STATUS_LABELS,
+  statusColorClasses,
   statusFromWeeklySets,
   type TrainingStatus,
-} from "@/lib/muscle-groups";
+} from "@/lib/muscles";
 import {
   filterSessions,
   weeklyMuscleSetsEndingAt,
@@ -28,21 +29,6 @@ type MuscleGroupCardsProps = {
   /** Weeks of history for sparkline (incl. selected week) */
   sparkWeeks?: number;
 };
-
-function statusStyles(status: TrainingStatus): string {
-  switch (status) {
-    case "growing":
-      return "text-fitness-growing border-fitness-growing/40 bg-fitness-growing/10";
-    case "maintaining":
-      return "text-fitness-maintaining border-fitness-maintaining/40 bg-fitness-maintaining/10";
-    case "under":
-      return "text-fitness-under border-fitness-under/40 bg-fitness-under/10";
-    default: {
-      const _exhaustive: never = status;
-      return _exhaustive;
-    }
-  }
-}
 
 export function MuscleGroupCards({
   sessions,
@@ -135,7 +121,7 @@ function MuscleMiniCard({
         <span
           className={cn(
             "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium leading-tight",
-            statusStyles(status),
+            statusColorClasses(status).text,
           )}
         >
           {STATUS_LABELS[status]}

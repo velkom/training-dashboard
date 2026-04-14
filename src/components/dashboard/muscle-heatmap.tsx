@@ -9,7 +9,7 @@ import {
   MUSCLE_LABELS,
   SETS_GROWTH_MIN,
   type MuscleId,
-} from "@/lib/muscle-groups";
+} from "@/lib/muscles";
 import { filterSessions, weeklyMuscleSets } from "@/lib/workout-stats";
 import type { UserFilter } from "@/lib/workout-stats";
 import type { WorkoutSession } from "@/types";

@@ -4,7 +4,8 @@ import {
   MUSCLE_IDS,
   resolveMuscleAllocations,
   type MuscleId,
-} from "@/lib/muscle-groups";
+  type MuscleSetsRecord,
+} from "@/lib/muscles";
 import type { WorkoutSession } from "@/types";
 
 import { toLocalDateString, getWeekStart } from "./date-week";
@@ -12,7 +13,7 @@ import { filterSessionsByWeek } from "./session-scope";
 
 export type WeeklyMuscleBucket = {
   weekStart: string;
-  muscles: Record<MuscleId, { sets: number; volume: number }>;
+  muscles: MuscleSetsRecord;
 };
 
 function addSessionToWeeklyMuscleBucket(

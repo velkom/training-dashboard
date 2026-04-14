@@ -5,17 +5,8 @@ import {
   allocateFromImportMuscleLabels,
   resolveMuscleAllocations,
   SECONDARY_SET_WEIGHT,
-} from "@/lib/muscle-groups";
-import type { WorkoutExercise } from "@/types";
-
-function exercise(overrides: Partial<WorkoutExercise> & Pick<WorkoutExercise, "name">): WorkoutExercise {
-  return {
-    position: 0,
-    muscleGroups: [],
-    sets: [],
-    ...overrides,
-  };
-}
+} from "@/lib/muscles";
+import { createExercise } from "@/test-utils/factories";
 
 describe("allocateFromExerciseMapEntry", () => {
   it("returns empty when workingSets is zero", () => {
@@ -62,7 +53,7 @@ describe("allocateFromImportMuscleLabels", () => {
 
 describe("resolveMuscleAllocations", () => {
   it("uses exercise map when matched: primary full sets, secondary half", () => {
-    const ex = exercise({
+    const ex = createExercise({
       name: "Squat",
       muscleGroups: ["shoulders"],
       sets: [
@@ -81,7 +72,7 @@ describe("resolveMuscleAllocations", () => {
   });
 
   it("falls back to equal split from import labels when exercise is not in map", () => {
-    const ex = exercise({
+    const ex = createExercise({
       name: "Obscure Gym Machine 9000",
       muscleGroups: ["Chest", "Triceps"],
       sets: [
@@ -96,7 +87,7 @@ describe("resolveMuscleAllocations", () => {
   });
 
   it("returns empty when there is no map match and no resolvable import labels", () => {
-    const ex = exercise({
+    const ex = createExercise({
       name: "Totally Unknown Movement",
       muscleGroups: ["", "nope"],
       sets: [{ setNumber: 1, setType: "normal" }],
@@ -105,7 +96,7 @@ describe("resolveMuscleAllocations", () => {
   });
 
   it("excludes warmup sets from working set count (all warmups yields empty)", () => {
-    const ex = exercise({
+    const ex = createExercise({
       name: "Squat",
       sets: [
         { setNumber: 1, setType: "warmup" },
@@ -116,7 +107,7 @@ describe("resolveMuscleAllocations", () => {
   });
 
   it("counts only non-warmup sets when mixed", () => {
-    const ex = exercise({
+    const ex = createExercise({
       name: "Squat",
       sets: [
         { setNumber: 1, setType: "warmup" },
