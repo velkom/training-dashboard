@@ -89,7 +89,7 @@ export type MuscleAllocation = {
   weightedSets: number;
 };
 
-type MuscleMapEntry = {
+export type MuscleMapEntry = {
   primary: MuscleId[];
   secondary: MuscleId[];
 };
@@ -101,12 +101,48 @@ function entry(
   return { primary, secondary };
 }
 
+type ExerciseMuscleMapSection = Record<string, MuscleMapEntry>;
+
+const MUSCLE_ID_SET = new Set<string>(MUSCLE_IDS);
+
+function assertValidMuscleMapEntry(exerciseKey: string, e: MuscleMapEntry): void {
+  for (const m of e.primary) {
+    if (!MUSCLE_ID_SET.has(m)) {
+      throw new Error(`Invalid MuscleId in primary for "${exerciseKey}": ${String(m)}`);
+    }
+  }
+  for (const m of e.secondary) {
+    if (!MUSCLE_ID_SET.has(m)) {
+      throw new Error(`Invalid MuscleId in secondary for "${exerciseKey}": ${String(m)}`);
+    }
+  }
+}
+
+/** Merge contributor sections; throws on duplicate keys or invalid muscle ids. */
+function mergeExerciseMuscleMapSections(
+  sections: Record<string, ExerciseMuscleMapSection>,
+): Record<string, MuscleMapEntry> {
+  const out: Record<string, MuscleMapEntry> = {};
+  for (const [sectionName, block] of Object.entries(sections)) {
+    for (const [key, value] of Object.entries(block)) {
+      if (out[key] !== undefined) {
+        throw new Error(
+          `Duplicate exercise muscle map key "${key}" (section "${sectionName}" overlaps an earlier section)`,
+        );
+      }
+      assertValidMuscleMapEntry(key, value);
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
 /**
  * Normalized exercise name keys → primary/secondary muscles.
  * Keys are produced by `normalizeExerciseName`.
  */
-const EXERCISE_MUSCLE_MAP: Record<string, MuscleMapEntry> = {
-  // Chest
+const EXERCISE_MUSCLE_MAP = mergeExerciseMuscleMapSections({
+  chest: {
   "barbell bench press": entry(["chest"], ["front_delts", "triceps"]),
   "dumbbell bench press": entry(["chest"], ["front_delts", "triceps"]),
   "incline barbell bench press": entry(["chest"], ["front_delts", "triceps"]),
@@ -122,8 +158,8 @@ const EXERCISE_MUSCLE_MAP: Record<string, MuscleMapEntry> = {
   "fly": entry(["chest"], ["front_delts"]),
   "dumbbell fly": entry(["chest"], ["front_delts"]),
   "cable fly": entry(["chest"], ["front_delts"]),
-
-  // Shoulders
+  },
+  shoulders: {
   "overhead press": entry(["front_delts", "side_delts"], ["triceps"]),
   "barbell overhead press": entry(["front_delts", "side_delts"], ["triceps"]),
   "military press": entry(["front_delts", "side_delts"], ["triceps"]),
@@ -140,8 +176,8 @@ const EXERCISE_MUSCLE_MAP: Record<string, MuscleMapEntry> = {
   "reverse fly": entry(["rear_delts"], ["upper_back_traps"]),
   "face pull": entry(["rear_delts", "upper_back_traps"], ["biceps"]),
   "upright row": entry(["side_delts", "upper_back_traps"], ["biceps"]),
-
-  // Arms
+  },
+  arms: {
   "tricep pushdown": entry(["triceps"], ["forearms"]),
   "triceps pushdown": entry(["triceps"], ["forearms"]),
   "rope pushdown": entry(["triceps"], ["forearms"]),
@@ -156,8 +192,8 @@ const EXERCISE_MUSCLE_MAP: Record<string, MuscleMapEntry> = {
   "concentration curl": entry(["biceps"], ["forearms"]),
   "cable curl": entry(["biceps"], ["forearms"]),
   "wrist curl": entry(["forearms"], []),
-
-  // Back
+  },
+  back: {
   "deadlift": entry(
     ["lower_back", "glutes", "hamstrings", "upper_back_traps"],
     ["upper_back_lats", "forearms"],
@@ -188,8 +224,8 @@ const EXERCISE_MUSCLE_MAP: Record<string, MuscleMapEntry> = {
   "hyperextension": entry(["lower_back", "hamstrings", "glutes"], []),
   "back extension": entry(["lower_back", "hamstrings"], []),
   "good morning": entry(["hamstrings", "lower_back", "glutes"], []),
-
-  // Core
+  },
+  core: {
   "plank": entry(["abs"], ["obliques"]),
   "hanging leg raise": entry(["abs"], ["forearms"]),
   "cable crunch": entry(["abs"], ["obliques"]),
@@ -198,8 +234,8 @@ const EXERCISE_MUSCLE_MAP: Record<string, MuscleMapEntry> = {
   "russian twist": entry(["obliques"], ["abs"]),
   "wood chop": entry(["obliques"], ["abs"]),
   "pallof press": entry(["abs", "obliques"], ["forearms"]),
-
-  // Legs
+  },
+  legs: {
   "squat": entry(["quads", "glutes"], ["lower_back", "hamstrings"]),
   "barbell back squat": entry(["quads", "glutes"], ["lower_back", "hamstrings"]),
   "front squat": entry(["quads"], ["glutes", "abs", "upper_back_traps"]),
@@ -223,7 +259,8 @@ const EXERCISE_MUSCLE_MAP: Record<string, MuscleMapEntry> = {
   "seated calf raise": entry(["calves"], []),
   "sled push": entry(["quads", "glutes", "calves"], ["hamstrings"]),
   "box jump": entry(["quads", "glutes", "calves"], []),
-};
+  },
+});
 
 /** Map free-text muscle labels from imports to MuscleId */
 const IMPORT_MUSCLE_ALIASES: { pattern: RegExp; muscle: MuscleId }[] = [
@@ -299,7 +336,53 @@ export function exerciseVolumeKg(exercise: WorkoutExercise): number {
 }
 
 /**
+ * Allocate weighted sets from a curated map entry (primary = full, secondary = half).
+ */
+export function allocateFromExerciseMapEntry(
+  mapEntry: MuscleMapEntry,
+  workingSets: number,
+): MuscleAllocation[] {
+  if (workingSets <= 0) return [];
+  const allocs: MuscleAllocation[] = [];
+  for (const m of mapEntry.primary) {
+    allocs.push({ muscle: m, weightedSets: workingSets });
+  }
+  for (const m of mapEntry.secondary) {
+    allocs.push({
+      muscle: m,
+      weightedSets: workingSets * SECONDARY_SET_WEIGHT,
+    });
+  }
+  return allocs;
+}
+
+/**
+ * Allocate working sets equally across muscles parsed from import labels.
+ */
+export function allocateFromImportMuscleLabels(
+  muscleGroups: string[],
+  workingSets: number,
+): MuscleAllocation[] {
+  if (workingSets <= 0) return [];
+  const fromImport: MuscleId[] = [];
+  for (const raw of muscleGroups) {
+    const m = mapImportMuscleLabel(raw);
+    if (m) fromImport.push(m);
+  }
+  if (fromImport.length === 0) return [];
+  const unique = [...new Set(fromImport)];
+  const perMuscle = workingSets / unique.length;
+  return unique.map((muscle) => ({
+    muscle,
+    weightedSets: perMuscle,
+  }));
+}
+
+/**
  * Resolve which muscles get credit for this exercise's working sets.
+ *
+ * Priority: curated EXERCISE_MUSCLE_MAP (primary/secondary weights) first,
+ * then import muscle labels as fallback for unknown exercises.
  */
 export function resolveMuscleAllocations(
   exercise: WorkoutExercise,
@@ -307,41 +390,15 @@ export function resolveMuscleAllocations(
   const workingSets = countWorkingSets(exercise);
   if (workingSets === 0) return [];
 
-  const fromImport: MuscleId[] = [];
-  for (const raw of exercise.muscleGroups) {
-    const m = mapImportMuscleLabel(raw);
-    if (m) fromImport.push(m);
-  }
-  if (fromImport.length > 0) {
-    const unique = [...new Set(fromImport)];
-    const perMuscle = workingSets / unique.length;
-    return unique.map((muscle) => ({
-      muscle,
-      weightedSets: perMuscle,
-    }));
-  }
-
   const mapped = lookupExerciseMap(exercise.name);
-  if (!mapped) {
-    return [];
+  if (mapped) {
+    const allocs = allocateFromExerciseMapEntry(mapped, workingSets);
+    if (allocs.length > 0) {
+      return allocs;
+    }
   }
 
-  const primaryW = 1;
-  const secondaryW = SECONDARY_SET_WEIGHT;
-  const weights: { muscle: MuscleId; w: number }[] = [];
-  for (const m of mapped.primary) {
-    weights.push({ muscle: m, w: primaryW });
-  }
-  for (const m of mapped.secondary) {
-    weights.push({ muscle: m, w: secondaryW });
-  }
-  const sumW = weights.reduce((a, b) => a + b.w, 0);
-  if (sumW <= 0) return [];
-
-  return weights.map(({ muscle, w }) => ({
-    muscle,
-    weightedSets: (workingSets * w) / sumW,
-  }));
+  return allocateFromImportMuscleLabels(exercise.muscleGroups, workingSets);
 }
 
 export function emptyMuscleRecord(): Record<MuscleId, { sets: number; volume: number }> {
