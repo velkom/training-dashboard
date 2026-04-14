@@ -28,6 +28,10 @@ export type WorkoutExercise = {
   name: string;
   position: number;
   muscleGroups: string[];
+  /** Structured primary muscle labels from source app (e.g. Daily Strength). */
+  importPrimaryMuscles?: string[];
+  /** Structured secondary muscle labels from source app (e.g. Daily Strength). */
+  importSecondaryMuscles?: string[];
   sets: WorkoutSet[];
 };
 

@@ -63,7 +63,7 @@ Add pure functions under [`src/lib/workout-stats/`](src/lib/workout-stats/) in t
 
 - Exercise names → muscles: edit [`src/lib/muscles/exercise-map.ts`](src/lib/muscles/exercise-map.ts) (map only; no allocation logic).
 - Set credit / volume split: [`src/lib/muscles/allocation.ts`](src/lib/muscles/allocation.ts).
-- Growth / maintaining / under thresholds: [`src/lib/muscles/constants.ts`](src/lib/muscles/constants.ts) + [`status.ts`](src/lib/muscles/status.ts).
+- Weekly stimulus zone thresholds: [`src/lib/muscles/constants.ts`](src/lib/muscles/constants.ts) + [`status.ts`](src/lib/muscles/status.ts).
 - Dashboard weekly muscle card data: [`computeWeeklyMuscleStats`](src/lib/workout-stats/weekly-muscle-stats-view.ts) + [`useWeeklyMuscleStats`](src/hooks/use-weekly-muscle-stats.ts).
 
 ### Persistence changes

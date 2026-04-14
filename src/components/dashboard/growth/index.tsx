@@ -3,12 +3,14 @@
 import { useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SETS_GROWTH_MIN, type MuscleId } from "@/lib/muscles";
+import type { MuscleId } from "@/lib/muscles";
 import type { WeeklyMuscleStats } from "@/lib/workout-stats";
 
 import { GrowthCategoryGroup } from "./category-group";
 import { GrowthRingGauge } from "./ring-gauge";
+import { StimulusInfoDialog } from "./stimulus-info-dialog";
 import { GrowthSummaryPills } from "./summary-pills";
+import { UnmappedExercisesList } from "./unmapped-exercises";
 
 export type WeeklyGrowthSummaryProps = {
   stats: WeeklyMuscleStats;
@@ -20,7 +22,7 @@ export function WeeklyGrowthSummary({ stats }: WeeklyGrowthSummaryProps) {
   const {
     bucket,
     dailyBreakdown,
-    growingCount,
+    solidOrBetterCount,
     trainedCount,
     statusCounts,
     groups,
@@ -39,17 +41,19 @@ export function WeeklyGrowthSummary({ stats }: WeeklyGrowthSummaryProps) {
         <div className="flex items-start gap-4">
           {hasAnyTrainedMuscle ? (
             <GrowthRingGauge
-              growingCount={growingCount}
+              solidOrBetterCount={solidOrBetterCount}
               trainedCount={trainedCount}
             />
           ) : null}
           <div className="min-w-0 flex-1 space-y-2">
-            <CardTitle>Weekly growth stimulus</CardTitle>
+            <CardTitle className="flex items-center gap-1.5">
+              Weekly growth stimulus
+              <StimulusInfoDialog />
+            </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Effective working sets vs a {SETS_GROWTH_MIN}+ sets / week growth
-              target per muscle you trained.
+              Weekly effective sets per muscle — classified into stimulus zones.
               {!hasAnyTrainedMuscle ? (
-                <> No muscle-tagged working volume logged this week.</>
+                <> No mapped working volume logged this week.</>
               ) : null}
             </p>
             {hasAnyTrainedMuscle ? (
@@ -61,8 +65,7 @@ export function WeeklyGrowthSummary({ stats }: WeeklyGrowthSummaryProps) {
       <CardContent className="space-y-6">
         {!hasAnyTrainedMuscle ? (
           <p className="text-sm text-muted-foreground">
-            Train with mapped exercises or import muscle labels to see breakdown
-            by muscle.
+            Train with exercises in the app map to see breakdown by muscle.
           </p>
         ) : null}
 
@@ -80,6 +83,10 @@ export function WeeklyGrowthSummary({ stats }: WeeklyGrowthSummaryProps) {
               />
             ))}
           </div>
+        ) : null}
+
+        {bucket.unmappedExercises.length > 0 ? (
+          <UnmappedExercisesList exercises={bucket.unmappedExercises} />
         ) : null}
       </CardContent>
     </Card>

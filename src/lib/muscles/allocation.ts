@@ -108,10 +108,48 @@ export function allocateFromImportMuscleLabels(
 }
 
 /**
+ * Allocate from structured import primary/secondary muscle data.
+ * Uses the same 1.0/0.5 contribution model as the curated map.
+ * Only activates when the exercise carries separate primary and secondary lists
+ * from a source app (e.g. Daily Strength).
+ */
+export function allocateFromStructuredImportData(
+  exercise: WorkoutExercise,
+  workingSets: number,
+): MuscleAllocation[] {
+  const primary = exercise.importPrimaryMuscles;
+  if (!primary || primary.length === 0) return [];
+
+  const secondary = exercise.importSecondaryMuscles ?? [];
+
+  const resolvedPrimary: MuscleId[] = [];
+  for (const label of primary) {
+    const m = mapImportMuscleLabel(label);
+    if (m) resolvedPrimary.push(m);
+  }
+  if (resolvedPrimary.length === 0) return [];
+
+  const uniquePrimary = [...new Set(resolvedPrimary)];
+
+  const resolvedSecondary: MuscleId[] = [];
+  for (const label of secondary) {
+    const m = mapImportMuscleLabel(label);
+    if (m && !uniquePrimary.includes(m)) resolvedSecondary.push(m);
+  }
+
+  const mapEntry: MuscleMapEntry = {
+    primary: uniquePrimary,
+    secondary: [...new Set(resolvedSecondary)],
+  };
+  return allocateFromExerciseMapEntry(mapEntry, workingSets);
+}
+
+/**
  * Resolve which muscles get credit for this exercise's working sets.
  *
- * Priority: curated EXERCISE_MUSCLE_MAP (primary/secondary weights) first,
- * then import muscle labels as fallback for unknown exercises.
+ * Layer 1: Curated EXERCISE_MUSCLE_MAP (highest precision, always wins).
+ * Layer 2: Structured import data (primary/secondary from source app, 1.0/0.5 model).
+ * Layer 3: Unmapped — zero credit.
  */
 export function resolveMuscleAllocations(
   exercise: WorkoutExercise,
@@ -119,13 +157,17 @@ export function resolveMuscleAllocations(
   const workingSets = countWorkingSets(exercise);
   if (workingSets === 0) return [];
 
+  // Layer 1: Curated exercise map
   const mapped = lookupExerciseMap(exercise.name);
   if (mapped) {
     const allocs = allocateFromExerciseMapEntry(mapped, workingSets);
-    if (allocs.length > 0) {
-      return allocs;
-    }
+    if (allocs.length > 0) return allocs;
   }
 
-  return allocateFromImportMuscleLabels(exercise.muscleGroups, workingSets);
+  // Layer 2: Structured import data (primary/secondary from source app)
+  const fromImport = allocateFromStructuredImportData(exercise, workingSets);
+  if (fromImport.length > 0) return fromImport;
+
+  // Layer 3: Unmapped — zero credit
+  return [];
 }

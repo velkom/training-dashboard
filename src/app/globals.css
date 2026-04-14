@@ -39,9 +39,11 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --color-fitness-growing: var(--fitness-growing);
-  --color-fitness-maintaining: var(--fitness-maintaining);
-  --color-fitness-under: var(--fitness-under);
+  --color-fitness-solid: var(--fitness-solid);
+  --color-fitness-minimal: var(--fitness-minimal);
+  --color-fitness-insufficient: var(--fitness-insufficient);
+  --color-fitness-high: var(--fitness-high);
+  --color-fitness-very-high: var(--fitness-very-high);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -84,9 +86,11 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --fitness-growing: oklch(0.55 0.15 145);
-  --fitness-maintaining: oklch(0.75 0.12 85);
-  --fitness-under: oklch(0.55 0.18 25);
+  --fitness-solid: oklch(0.55 0.15 145);
+  --fitness-minimal: oklch(0.75 0.12 85);
+  --fitness-insufficient: oklch(0.55 0.18 25);
+  --fitness-high: oklch(0.6 0.15 250);
+  --fitness-very-high: oklch(0.55 0.17 300);
 }
 
 .dark {
@@ -122,10 +126,12 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: oklch(0.72 0.15 92);
-  /* Muscle status accents */
-  --fitness-growing: oklch(0.72 0.19 145);
-  --fitness-maintaining: oklch(0.8 0.15 85);
-  --fitness-under: oklch(0.65 0.2 25);
+  /* Muscle stimulus zone accents */
+  --fitness-solid: oklch(0.72 0.19 145);
+  --fitness-minimal: oklch(0.8 0.15 85);
+  --fitness-insufficient: oklch(0.65 0.2 25);
+  --fitness-high: oklch(0.72 0.17 250);
+  --fitness-very-high: oklch(0.68 0.2 300);
 }
 
 @layer base {

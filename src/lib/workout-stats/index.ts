@@ -29,6 +29,7 @@ export type {
   DailyMuscleBreakdownDay,
   DailyMuscleDayCell,
   DailyMuscleDayExercise,
+  UnmappedExercise,
   WeeklyMuscleBucket,
 } from "./muscle-week-stats";
 export {

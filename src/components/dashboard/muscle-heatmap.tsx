@@ -4,12 +4,7 @@ import { Fragment, useMemo } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import {
-  MUSCLE_CATEGORIES,
-  MUSCLE_LABELS,
-  SETS_GROWTH_MIN,
-  type MuscleId,
-} from "@/lib/muscles";
+import { MUSCLE_CATEGORIES, MUSCLE_LABELS, type MuscleId } from "@/lib/muscles";
 import { filterSessions, weeklyMuscleSets } from "@/lib/workout-stats";
 import type { UserFilter } from "@/lib/workout-stats";
 import type { WorkoutSession } from "@/types";
@@ -22,10 +17,11 @@ type MuscleHeatmapProps = {
 
 function cellStyle(sets: number): string {
   if (sets <= 0) return "bg-muted/40 text-muted-foreground";
-  if (sets < 6) return "bg-fitness-under/25 text-foreground";
-  if (sets < SETS_GROWTH_MIN) return "bg-fitness-maintaining/25 text-foreground";
-  if (sets < 15) return "bg-fitness-growing/30 text-foreground";
-  return "bg-fitness-growing/55 text-foreground";
+  if (sets < 6) return "bg-fitness-insufficient/25 text-foreground";
+  if (sets < 10) return "bg-fitness-minimal/25 text-foreground";
+  if (sets < 15) return "bg-fitness-solid/30 text-foreground";
+  if (sets <= 20) return "bg-fitness-high/35 text-foreground";
+  return "bg-fitness-very-high/40 text-foreground";
 }
 
 export function MuscleHeatmap({
@@ -50,7 +46,8 @@ export function MuscleHeatmap({
       <CardHeader>
         <CardTitle>Weekly sets by muscle</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Effective sets per week. Stronger green ≈ growth range (10+).
+          Effective sets per week. Color reflects stimulus zone (insufficient
+          through very high).
         </p>
       </CardHeader>
       <CardContent className="overflow-x-auto">

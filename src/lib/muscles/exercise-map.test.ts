@@ -34,4 +34,31 @@ describe("lookupExerciseMap", () => {
   it("returns undefined for unknown exercise with no substring match", () => {
     expect(lookupExerciseMap("xyzabc unknown qqq")).toBeUndefined();
   });
+
+  it("matches converging chest press via exact map entry", () => {
+    const e = lookupExerciseMap("Converging Chest Press");
+    expect(e?.primary).toContain("chest");
+  });
+
+  it("token match: Standing Overhead Tricep Extension finds overhead tricep extension", () => {
+    const e = lookupExerciseMap("Standing Overhead Tricep Extension");
+    expect(e).toBeDefined();
+    expect(e?.primary).toContain("triceps");
+  });
+
+  it("token match: Smith Machine Barbell Back Squat finds barbell back squat (most specific)", () => {
+    const e = lookupExerciseMap("Smith Machine Barbell Back Squat");
+    expect(e).toBeDefined();
+    expect(e?.primary).toEqual(
+      expect.arrayContaining(["quads", "glutes"]),
+    );
+  });
+
+  it("does not false-positive on token matching for single-token map keys", () => {
+    expect(lookupExerciseMap("Resistance Band Stretch Routine")).toBeUndefined();
+  });
+
+  it("returns undefined for completely unknown exercise", () => {
+    expect(lookupExerciseMap("Underwater Basket Weaving")).toBeUndefined();
+  });
 });

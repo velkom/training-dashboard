@@ -16,7 +16,13 @@ describe("computeWeeklyMuscleStats", () => {
     expect(s.isEmpty).toBe(true);
     expect(s.trainedCount).toBe(0);
     expect(s.groups).toEqual([]);
-    expect(s.statusCounts).toEqual({ growing: 0, maintaining: 0, under: 0 });
+    expect(s.statusCounts).toEqual({
+      insufficient: 0,
+      minimal: 0,
+      solid: 0,
+      high: 0,
+      very_high: 0,
+    });
   });
 
   it("counts status buckets for trained muscles", () => {
@@ -43,11 +49,30 @@ describe("computeWeeklyMuscleStats", () => {
     ];
     const s = computeWeeklyMuscleStats(sessions, WEEK);
     expect(s.isEmpty).toBe(false);
-    expect(s.statusCounts.growing).toBeGreaterThan(0);
+    const sumStatuses =
+      s.statusCounts.insufficient +
+      s.statusCounts.minimal +
+      s.statusCounts.solid +
+      s.statusCounts.high +
+      s.statusCounts.very_high;
+    expect(sumStatuses).toBe(s.trainedCount);
+    expect(s.solidOrBetterCount).toBe(
+      s.statusCounts.solid + s.statusCounts.high + s.statusCounts.very_high,
+    );
+    expect(s.statusCounts.solid + s.statusCounts.high + s.statusCounts.very_high).toBeGreaterThan(
+      0,
+    );
     expect(s.groups.some((g) => g.id === "legs")).toBe(true);
     const legs = s.groups.find((g) => g.id === "legs");
     expect(legs?.muscles.length).toBeGreaterThan(0);
     expect(legs?.totalSets).toBeGreaterThan(0);
+    const legsZoneSum =
+      (legs?.insufficientCount ?? 0) +
+      (legs?.minimalCount ?? 0) +
+      (legs?.solidCount ?? 0) +
+      (legs?.highCount ?? 0) +
+      (legs?.veryHighCount ?? 0);
+    expect(legsZoneSum).toBe(legs?.muscles.length ?? 0);
   });
 
   it("exposes bucket and breakdown aligned with selected week", () => {

@@ -1,28 +1,38 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  SETS_GROWTH_MIN,
-  SETS_MAINTENANCE_MIN,
-  statusFromWeeklySets,
-} from "@/lib/muscles";
+import { statusFromWeeklySets } from "@/lib/muscles";
 
 describe("statusFromWeeklySets", () => {
-  it("returns under below maintenance threshold", () => {
-    expect(statusFromWeeklySets(0)).toBe("under");
-    expect(statusFromWeeklySets(SETS_MAINTENANCE_MIN - 0.1)).toBe("under");
-    expect(statusFromWeeklySets(4.9)).toBe("under");
+  it("returns insufficient below minimal zone", () => {
+    expect(statusFromWeeklySets(0)).toBe("insufficient");
+    expect(statusFromWeeklySets(3)).toBe("insufficient");
+    expect(statusFromWeeklySets(5)).toBe("insufficient");
+    expect(statusFromWeeklySets(5.9)).toBe("insufficient");
   });
 
-  it("returns maintaining at maintenance boundary through below growth", () => {
-    expect(statusFromWeeklySets(SETS_MAINTENANCE_MIN)).toBe("maintaining");
-    expect(statusFromWeeklySets(7)).toBe("maintaining");
-    expect(statusFromWeeklySets(SETS_GROWTH_MIN - 0.1)).toBe("maintaining");
-    expect(statusFromWeeklySets(9.9)).toBe("maintaining");
+  it("returns minimal from 6 through below solid", () => {
+    expect(statusFromWeeklySets(6)).toBe("minimal");
+    expect(statusFromWeeklySets(7.5)).toBe("minimal");
+    expect(statusFromWeeklySets(9)).toBe("minimal");
+    expect(statusFromWeeklySets(9.9)).toBe("minimal");
   });
 
-  it("returns growing at growth threshold and above", () => {
-    expect(statusFromWeeklySets(SETS_GROWTH_MIN)).toBe("growing");
-    expect(statusFromWeeklySets(15)).toBe("growing");
-    expect(statusFromWeeklySets(20)).toBe("growing");
+  it("returns solid from 10 through below high", () => {
+    expect(statusFromWeeklySets(10)).toBe("solid");
+    expect(statusFromWeeklySets(12)).toBe("solid");
+    expect(statusFromWeeklySets(14)).toBe("solid");
+    expect(statusFromWeeklySets(14.9)).toBe("solid");
+  });
+
+  it("returns high from 15 through 20", () => {
+    expect(statusFromWeeklySets(15)).toBe("high");
+    expect(statusFromWeeklySets(17)).toBe("high");
+    expect(statusFromWeeklySets(20)).toBe("high");
+  });
+
+  it("returns very_high above 20", () => {
+    expect(statusFromWeeklySets(20.1)).toBe("very_high");
+    expect(statusFromWeeklySets(21)).toBe("very_high");
+    expect(statusFromWeeklySets(30)).toBe("very_high");
   });
 });

@@ -97,9 +97,15 @@ export type MuscleSetsRecord = Record<
   { sets: number; volume: number }
 >;
 
-export type TrainingStatus = "growing" | "maintaining" | "under";
+export type TrainingStatus =
+  | "insufficient"
+  | "minimal"
+  | "solid"
+  | "high"
+  | "very_high";
 
-/** Thresholds: weekly effective sets */
-export const SETS_MAINTENANCE_MIN = 5;
-export const SETS_GROWTH_MIN = 10;
-export const SETS_ADVANCED_MIN = 15;
+/** Zone boundaries: weekly effective sets (max inclusive per zone name) */
+export const SETS_INSUFFICIENT_MAX = 5;
+export const SETS_MINIMAL_MAX = 9;
+export const SETS_SOLID_MAX = 14;
+export const SETS_HIGH_MAX = 20;

@@ -120,13 +120,23 @@ function collectMuscleGroups(ex: DsExerciseDetail): string[] {
   return [...names];
 }
 
+function extractMuscleNames(groups: DsMuscleGroup[] | undefined): string[] {
+  return (groups ?? [])
+    .map((g) => g.name)
+    .filter((n): n is string => !!n);
+}
+
 function mapDsExercise(raw: DsSessionExercise, fallbackPos: number): WorkoutExercise {
   const detail = raw.exercise ?? {};
   const sets = (raw.workoutSessionSets ?? []).map((s, i) => mapDsSet(s, i));
+  const primary = extractMuscleNames(detail.primaryMuscleGroups);
+  const secondary = extractMuscleNames(detail.secondaryMuscleGroups);
   return {
     name: String(detail.name ?? "Exercise"),
     position: typeof raw.position === "number" ? raw.position : fallbackPos,
     muscleGroups: collectMuscleGroups(detail),
+    importPrimaryMuscles: primary.length > 0 ? primary : undefined,
+    importSecondaryMuscles: secondary.length > 0 ? secondary : undefined,
     sets,
   };
 }

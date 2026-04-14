@@ -1,4 +1,5 @@
 import {
+  countWorkingSets,
   emptyMuscleRecord,
   exerciseVolumeKg,
   MUSCLE_IDS,
@@ -11,9 +12,12 @@ import type { WorkoutSession } from "@/types";
 import { toLocalDateString, getWeekStart } from "./date-week";
 import { filterSessionsByWeek } from "./session-scope";
 
+export type UnmappedExercise = { name: string; sets: number };
+
 export type WeeklyMuscleBucket = {
   weekStart: string;
   muscles: MuscleSetsRecord;
+  unmappedExercises: UnmappedExercise[];
 };
 
 function addSessionToWeeklyMuscleBucket(
@@ -23,7 +27,18 @@ function addSessionToWeeklyMuscleBucket(
   for (const ex of session.exercises) {
     const vol = exerciseVolumeKg(ex);
     const allocs = resolveMuscleAllocations(ex);
-    if (allocs.length === 0) continue;
+    const workingSets = countWorkingSets(ex);
+
+    if (allocs.length === 0 && workingSets > 0) {
+      const existing = bucket.unmappedExercises.find((u) => u.name === ex.name);
+      if (existing) {
+        existing.sets += workingSets;
+      } else {
+        bucket.unmappedExercises.push({ name: ex.name, sets: workingSets });
+      }
+      continue;
+    }
+
     const totalWeighted = allocs.reduce((a, x) => a + x.weightedSets, 0);
     for (const { muscle, weightedSets } of allocs) {
       const cell = bucket.muscles[muscle];
@@ -44,6 +59,7 @@ export function weeklyMuscleBucketForWeek(
   const bucket: WeeklyMuscleBucket = {
     weekStart,
     muscles: emptyMuscleRecord(),
+    unmappedExercises: [],
   };
   const scoped = filterSessionsByWeek(sessions, weekStart);
   for (const s of scoped) {
@@ -145,7 +161,7 @@ export function weeklyMuscleSetsEndingAt(
     d.setDate(endMonday.getDate() - i * 7);
     d.setHours(0, 0, 0, 0);
     const start = toLocalDateString(d);
-    buckets.push({ weekStart: start, muscles: emptyMuscleRecord() });
+    buckets.push({ weekStart: start, muscles: emptyMuscleRecord(), unmappedExercises: [] });
   }
 
   for (const s of sessions) {

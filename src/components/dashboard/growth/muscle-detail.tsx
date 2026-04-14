@@ -5,12 +5,17 @@ import { ArrowUp } from "lucide-react";
 import { useMuscleExerciseRows } from "@/hooks/use-muscle-exercise-detail";
 import {
   formatSets,
-  SETS_GROWTH_MIN,
+  SETS_INSUFFICIENT_MAX,
+  SETS_MINIMAL_MAX,
+  statusColorClasses,
   type MuscleId,
   type TrainingStatus,
 } from "@/lib/muscles";
 import { cn } from "@/lib/utils";
 import type { DailyMuscleBreakdown } from "@/lib/workout-stats";
+
+const TARGET_MINIMAL_SETS = SETS_INSUFFICIENT_MAX + 1;
+const TARGET_SOLID_SETS = SETS_MINIMAL_MAX + 1;
 
 export type MuscleExerciseDetailProps = {
   muscle: MuscleId;
@@ -26,12 +31,49 @@ export function MuscleExerciseDetail({
   status,
 }: MuscleExerciseDetailProps) {
   const rows = useMuscleExerciseRows(muscle, dailyBreakdown, muscleWeeklySets);
-  const gapToGrowth =
-    status !== "growing"
-      ? Math.max(1, Math.ceil(SETS_GROWTH_MIN - muscleWeeklySets))
+
+  const gapToMinimal =
+    status === "insufficient"
+      ? Math.max(1, Math.ceil(TARGET_MINIMAL_SETS - muscleWeeklySets))
+      : 0;
+  const gapToSolid =
+    status === "minimal"
+      ? Math.max(1, Math.ceil(TARGET_SOLID_SETS - muscleWeeklySets))
       : 0;
 
   if (rows.length === 0) return null;
+
+  const zoneNote = (() => {
+    switch (status) {
+      case "insufficient":
+      case "minimal":
+        return null;
+      case "solid":
+        return (
+          <p className="mt-3 text-muted-foreground">
+            In solid growth range.
+          </p>
+        );
+      case "high":
+        return (
+          <p className="mt-3 text-muted-foreground">
+            High weekly volume — ensure recovery is adequate.
+          </p>
+        );
+      case "very_high":
+        return (
+          <p className="mt-3 text-muted-foreground">
+            Very high volume — likely does not need more work.
+          </p>
+        );
+      default: {
+        const _exhaustive: never = status;
+        return _exhaustive;
+      }
+    }
+  })();
+
+  const nudgeColors = statusColorClasses(status);
 
   return (
     <div className="space-y-3 text-xs">
@@ -63,20 +105,35 @@ export function MuscleExerciseDetail({
           </li>
         ))}
       </ul>
-      {status !== "growing" ? (
+      {status === "insufficient" ? (
         <div
           className={cn(
             "mt-3 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium",
-            status === "under"
-              ? "border-fitness-under/20 bg-fitness-under/8 text-fitness-under"
-              : "border-fitness-maintaining/20 bg-fitness-maintaining/8 text-fitness-maintaining",
+            nudgeColors.border,
+            nudgeColors.bg,
+            nudgeColors.text,
           )}
         >
           <ArrowUp className="size-3.5 shrink-0 opacity-75" aria-hidden />
-          Add ~{gapToGrowth} more set{gapToGrowth === 1 ? "" : "s"} to reach
-          growth range
+          Add ~{gapToMinimal} more set{gapToMinimal === 1 ? "" : "s"} to reach
+          minimal growth stimulus
         </div>
       ) : null}
+      {status === "minimal" ? (
+        <div
+          className={cn(
+            "mt-3 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium",
+            nudgeColors.border,
+            nudgeColors.bg,
+            nudgeColors.text,
+          )}
+        >
+          <ArrowUp className="size-3.5 shrink-0 opacity-75" aria-hidden />
+          Add ~{gapToSolid} more set{gapToSolid === 1 ? "" : "s"} to reach solid
+          growth stimulus
+        </div>
+      ) : null}
+      {zoneNote}
     </div>
   );
 }

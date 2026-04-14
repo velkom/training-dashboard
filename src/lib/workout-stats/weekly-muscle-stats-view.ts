@@ -4,6 +4,7 @@ import {
   statusFromWeeklySets,
   statusSortKey,
   type MuscleId,
+  type TrainingStatus,
 } from "@/lib/muscles";
 import type { WorkoutSession } from "@/types";
 
@@ -22,25 +23,57 @@ export type MuscleGroupSummary = {
   label: string;
   muscles: readonly MuscleId[];
   totalSets: number;
-  growingCount: number;
-  maintainingCount: number;
-  underCount: number;
+  insufficientCount: number;
+  minimalCount: number;
+  solidCount: number;
+  highCount: number;
+  veryHighCount: number;
 };
 
 export type WeeklyMuscleStats = {
   bucket: WeeklyMuscleBucket;
   dailyBreakdown: DailyMuscleBreakdown;
   trainedMuscleIds: ReadonlySet<MuscleId>;
-  growingCount: number;
+  solidOrBetterCount: number;
   trainedCount: number;
   statusCounts: Readonly<{
-    growing: number;
-    maintaining: number;
-    under: number;
+    insufficient: number;
+    minimal: number;
+    solid: number;
+    high: number;
+    very_high: number;
   }>;
   groups: readonly MuscleGroupSummary[];
   isEmpty: boolean;
 };
+
+function emptyStatusTally(): Record<TrainingStatus, number> {
+  return {
+    insufficient: 0,
+    minimal: 0,
+    solid: 0,
+    high: 0,
+    very_high: 0,
+  };
+}
+
+function tallyForMuscles(
+  muscles: readonly MuscleId[],
+  bucket: WeeklyMuscleBucket,
+): {
+  tally: Record<TrainingStatus, number>;
+  totalSets: number;
+} {
+  const tally = emptyStatusTally();
+  let totalSets = 0;
+  for (const m of muscles) {
+    const sets = bucket.muscles[m].sets;
+    totalSets += sets;
+    const st = statusFromWeeklySets(sets);
+    tally[st] += 1;
+  }
+  return { tally, totalSets };
+}
 
 function categoryShortLabel(catId: string, fallback: string): string {
   if (catId === "upper_push") return "Push";
@@ -101,19 +134,18 @@ export function computeWeeklyMuscleStats(
   );
 
   let trainedCount = 0;
-  let growing = 0;
-  let maintaining = 0;
-  let under = 0;
+  const globalTally = emptyStatusTally();
 
   for (const id of MUSCLE_IDS) {
     const sets = bucket.muscles[id].sets;
     if (sets <= 0) continue;
     trainedCount += 1;
     const s = statusFromWeeklySets(sets);
-    if (s === "growing") growing += 1;
-    else if (s === "maintaining") maintaining += 1;
-    else under += 1;
+    globalTally[s] += 1;
   }
+
+  const solidOrBetterCount =
+    globalTally.solid + globalTally.high + globalTally.very_high;
 
   const assigned = new Set<MuscleId>();
   const groups: MuscleGroupSummary[] = [];
@@ -130,51 +162,35 @@ export function computeWeeklyMuscleStats(
     });
     if (sorted.length === 0) continue;
 
-    let gC = 0;
-    let mC = 0;
-    let uC = 0;
-    let totalSets = 0;
-    for (const m of sorted) {
-      totalSets += bucket.muscles[m].sets;
-      const st = statusFromWeeklySets(bucket.muscles[m].sets);
-      if (st === "growing") gC += 1;
-      else if (st === "maintaining") mC += 1;
-      else uC += 1;
-    }
+    const { tally, totalSets } = tallyForMuscles(sorted, bucket);
 
     groups.push({
       id: cat.id,
       label: categoryShortLabel(cat.id, cat.label),
       muscles: sorted,
       totalSets,
-      growingCount: gC,
-      maintainingCount: mC,
-      underCount: uC,
+      insufficientCount: tally.insufficient,
+      minimalCount: tally.minimal,
+      solidCount: tally.solid,
+      highCount: tally.high,
+      veryHighCount: tally.very_high,
     });
     for (const m of sorted) assigned.add(m);
   }
 
   const orphans = [...trainedMuscleIds].filter((m) => !assigned.has(m));
   if (orphans.length > 0) {
-    let gC = 0;
-    let mC = 0;
-    let uC = 0;
-    let totalSets = 0;
-    for (const m of orphans) {
-      totalSets += bucket.muscles[m].sets;
-      const st = statusFromWeeklySets(bucket.muscles[m].sets);
-      if (st === "growing") gC += 1;
-      else if (st === "maintaining") mC += 1;
-      else uC += 1;
-    }
+    const { tally, totalSets } = tallyForMuscles(orphans, bucket);
     groups.push({
       id: "other",
       label: "Other",
       muscles: orphans,
       totalSets,
-      growingCount: gC,
-      maintainingCount: mC,
-      underCount: uC,
+      insufficientCount: tally.insufficient,
+      minimalCount: tally.minimal,
+      solidCount: tally.solid,
+      highCount: tally.high,
+      veryHighCount: tally.very_high,
     });
   }
 
@@ -182,9 +198,15 @@ export function computeWeeklyMuscleStats(
     bucket,
     dailyBreakdown,
     trainedMuscleIds,
-    growingCount: growing,
+    solidOrBetterCount,
     trainedCount,
-    statusCounts: { growing, maintaining, under },
+    statusCounts: {
+      insufficient: globalTally.insufficient,
+      minimal: globalTally.minimal,
+      solid: globalTally.solid,
+      high: globalTally.high,
+      very_high: globalTally.very_high,
+    },
     groups,
     isEmpty: trainedCount === 0,
   };
