@@ -47,6 +47,39 @@ function mapImportMuscleLabel(label: string): MuscleId | undefined {
 }
 
 /**
+ * Resolved primary/secondary {@link MuscleId}s from structured import fields
+ * (`importPrimaryMuscles` / `importSecondaryMuscles`), or null when none resolve.
+ */
+export function getStructuredImportMapEntry(
+  exercise: WorkoutExercise,
+): MuscleMapEntry | null {
+  const primary = exercise.importPrimaryMuscles;
+  if (!primary || primary.length === 0) return null;
+
+  const secondary = exercise.importSecondaryMuscles ?? [];
+
+  const resolvedPrimary: MuscleId[] = [];
+  for (const label of primary) {
+    const m = mapImportMuscleLabel(label);
+    if (m) resolvedPrimary.push(m);
+  }
+  if (resolvedPrimary.length === 0) return null;
+
+  const uniquePrimary = [...new Set(resolvedPrimary)];
+
+  const resolvedSecondary: MuscleId[] = [];
+  for (const label of secondary) {
+    const m = mapImportMuscleLabel(label);
+    if (m && !uniquePrimary.includes(m)) resolvedSecondary.push(m);
+  }
+
+  return {
+    primary: uniquePrimary,
+    secondary: [...new Set(resolvedSecondary)],
+  };
+}
+
+/**
  * Working sets count (excludes warmup).
  */
 export function countWorkingSets(exercise: WorkoutExercise): number {
@@ -117,30 +150,8 @@ export function allocateFromStructuredImportData(
   exercise: WorkoutExercise,
   workingSets: number,
 ): MuscleAllocation[] {
-  const primary = exercise.importPrimaryMuscles;
-  if (!primary || primary.length === 0) return [];
-
-  const secondary = exercise.importSecondaryMuscles ?? [];
-
-  const resolvedPrimary: MuscleId[] = [];
-  for (const label of primary) {
-    const m = mapImportMuscleLabel(label);
-    if (m) resolvedPrimary.push(m);
-  }
-  if (resolvedPrimary.length === 0) return [];
-
-  const uniquePrimary = [...new Set(resolvedPrimary)];
-
-  const resolvedSecondary: MuscleId[] = [];
-  for (const label of secondary) {
-    const m = mapImportMuscleLabel(label);
-    if (m && !uniquePrimary.includes(m)) resolvedSecondary.push(m);
-  }
-
-  const mapEntry: MuscleMapEntry = {
-    primary: uniquePrimary,
-    secondary: [...new Set(resolvedSecondary)],
-  };
+  const mapEntry = getStructuredImportMapEntry(exercise);
+  if (!mapEntry) return [];
   return allocateFromExerciseMapEntry(mapEntry, workingSets);
 }
 
