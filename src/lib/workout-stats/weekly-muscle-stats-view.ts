@@ -1,6 +1,7 @@
 import {
   MUSCLE_CATEGORIES,
   MUSCLE_IDS,
+  SECONDARY_SET_WEIGHT,
   statusFromWeeklySets,
   statusSortKey,
   type MuscleId,
@@ -17,6 +18,9 @@ export type ExerciseWeekRow = {
   totalSets: number;
   dayEntries: { dayLabel: string; sets: number }[];
   pctOfTotal: number;
+  role: "primary" | "secondary";
+  /** For secondary exercises: the actual working sets before the 0.5× multiplier */
+  actualSets?: number;
 };
 
 export type MuscleGroupSummary = {
@@ -89,7 +93,11 @@ export function buildMuscleExerciseRows(
 ): ExerciseWeekRow[] {
   const byName = new Map<
     string,
-    { totalSets: number; dayEntries: { dayLabel: string; sets: number }[] }
+    {
+      totalSets: number;
+      dayEntries: { dayLabel: string; sets: number }[];
+      role: "primary" | "secondary";
+    }
   >();
 
   for (const day of dailyBreakdown) {
@@ -103,23 +111,36 @@ export function buildMuscleExerciseRows(
           dayLabel: day.dayLabel,
           sets: ex.weightedSets,
         });
+        if (ex.role === "primary") existing.role = "primary";
       } else {
         byName.set(ex.name, {
           totalSets: ex.weightedSets,
           dayEntries: [{ dayLabel: day.dayLabel, sets: ex.weightedSets }],
+          role: ex.role,
         });
       }
     }
   }
 
   const total = muscleWeeklySets > 0 ? muscleWeeklySets : 1;
-  const rows: ExerciseWeekRow[] = [...byName.entries()].map(([name, data]) => ({
-    name,
-    totalSets: data.totalSets,
-    dayEntries: data.dayEntries,
-    pctOfTotal: (data.totalSets / total) * 100,
-  }));
-  rows.sort((a, b) => b.totalSets - a.totalSets);
+  const rows: ExerciseWeekRow[] = [...byName.entries()].map(([name, data]) => {
+    const row: ExerciseWeekRow = {
+      name,
+      totalSets: data.totalSets,
+      dayEntries: data.dayEntries,
+      pctOfTotal: (data.totalSets / total) * 100,
+      role: data.role,
+    };
+    if (data.role === "secondary") {
+      row.actualSets = Math.round(data.totalSets / SECONDARY_SET_WEIGHT);
+    }
+    return row;
+  });
+
+  rows.sort((a, b) => {
+    if (a.role !== b.role) return a.role === "primary" ? -1 : 1;
+    return b.totalSets - a.totalSets;
+  });
   return rows;
 }
 

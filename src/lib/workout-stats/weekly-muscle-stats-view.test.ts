@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
 
+import { MUSCLE_IDS, type MuscleId } from "@/lib/muscles";
 import { createExercise, createSession, createSet } from "@/test-utils/factories";
 
-import { dailyMuscleSetsForWeek } from "./muscle-week-stats";
+import {
+  dailyMuscleSetsForWeek,
+  type DailyMuscleBreakdown,
+  type DailyMuscleDayCell,
+} from "./muscle-week-stats";
 import {
   buildMuscleExerciseRows,
   computeWeeklyMuscleStats,
@@ -94,6 +99,14 @@ describe("computeWeeklyMuscleStats", () => {
   });
 });
 
+function emptyMusclesRecord(): Record<MuscleId, DailyMuscleDayCell> {
+  const r = {} as Record<MuscleId, DailyMuscleDayCell>;
+  for (const id of MUSCLE_IDS) {
+    r[id] = { sets: 0, exercises: [] };
+  }
+  return r;
+}
+
 describe("buildMuscleExerciseRows", () => {
   it("aggregates by exercise name and sorts by total sets", () => {
     const sessions = [
@@ -122,5 +135,83 @@ describe("buildMuscleExerciseRows", () => {
     expect(rows.every((r) => r.pctOfTotal >= 0 && r.pctOfTotal <= 100)).toBe(
       true,
     );
+  });
+
+  it("assigns secondary role and actualSets for half-credit muscles", () => {
+    const sessions = [
+      createSession({
+        startDate: "2024-01-02T12:00:00",
+        exercises: [
+          createExercise({
+            name: "Barbell Bench Press",
+            sets: [
+              createSet({ setNumber: 1, setType: "normal" }),
+              createSet({ setNumber: 2, setType: "normal" }),
+            ],
+          }),
+        ],
+      }),
+    ];
+    const breakdown = dailyMuscleSetsForWeek(sessions, WEEK);
+    const tricepsTotal = breakdown.reduce((acc, d) => acc + d.muscles.triceps.sets, 0);
+    const rows = buildMuscleExerciseRows("triceps", breakdown, tricepsTotal);
+    const bench = rows.find((r) => r.name === "Barbell Bench Press");
+    expect(bench?.role).toBe("secondary");
+    expect(bench?.actualSets).toBe(2);
+  });
+
+  it("lists primary exercises before secondary when both are present", () => {
+    const sessions = [
+      createSession({
+        startDate: "2024-01-02T12:00:00",
+        exercises: [
+          createExercise({
+            name: "Triceps Pushdown",
+            sets: [
+              createSet({ setNumber: 1, setType: "normal" }),
+              createSet({ setNumber: 2, setType: "normal" }),
+            ],
+          }),
+          createExercise({
+            name: "Barbell Bench Press",
+            sets: [
+              createSet({ setNumber: 1, setType: "normal" }),
+              createSet({ setNumber: 2, setType: "normal" }),
+            ],
+          }),
+        ],
+      }),
+    ];
+    const breakdown = dailyMuscleSetsForWeek(sessions, WEEK);
+    const tricepsTotal = breakdown.reduce((acc, d) => acc + d.muscles.triceps.sets, 0);
+    const rows = buildMuscleExerciseRows("triceps", breakdown, tricepsTotal);
+    expect(rows[0]!.name).toBe("Triceps Pushdown");
+    expect(rows[0]!.role).toBe("primary");
+    expect(rows[1]!.name).toBe("Barbell Bench Press");
+    expect(rows[1]!.role).toBe("secondary");
+  });
+
+  it("keeps primary when the same exercise name mixes primary and secondary across days", () => {
+    const monMuscles = emptyMusclesRecord();
+    monMuscles.triceps = {
+      sets: 1,
+      exercises: [{ name: "Overlap", weightedSets: 1, role: "secondary" }],
+    };
+    const tueMuscles = emptyMusclesRecord();
+    tueMuscles.triceps = {
+      sets: 2,
+      exercises: [{ name: "Overlap", weightedSets: 2, role: "primary" }],
+    };
+    const breakdown: DailyMuscleBreakdown = [
+      { date: "2024-01-01", dayLabel: "Mon", muscles: monMuscles },
+      { date: "2024-01-02", dayLabel: "Tue", muscles: tueMuscles },
+    ];
+    const rows = buildMuscleExerciseRows("triceps", breakdown, 3);
+    expect(rows[0]).toMatchObject({
+      name: "Overlap",
+      role: "primary",
+      totalSets: 3,
+    });
+    expect(rows[0]!.actualSets).toBeUndefined();
   });
 });

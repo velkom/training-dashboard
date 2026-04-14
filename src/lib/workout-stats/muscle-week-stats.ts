@@ -71,7 +71,12 @@ export function weeklyMuscleBucketForWeek(
   return bucket;
 }
 
-export type DailyMuscleDayExercise = { name: string; weightedSets: number };
+export type DailyMuscleDayExercise = {
+  name: string;
+  weightedSets: number;
+  /** Whether this muscle is a primary or secondary target of the exercise */
+  role: "primary" | "secondary";
+};
 
 export type DailyMuscleDayCell = {
   sets: number;
@@ -99,13 +104,16 @@ function addExerciseToMuscleDayCell(
   cell: DailyMuscleDayCell,
   exerciseName: string,
   weightedSets: number,
+  role: "primary" | "secondary",
 ): void {
   cell.sets += weightedSets;
   const existing = cell.exercises.find((e) => e.name === exerciseName);
   if (existing) {
     existing.weightedSets += weightedSets;
+    // If it appears as both primary and secondary, keep primary (stronger relationship)
+    if (role === "primary") existing.role = "primary";
   } else {
-    cell.exercises.push({ name: exerciseName, weightedSets });
+    cell.exercises.push({ name: exerciseName, weightedSets, role });
   }
 }
 
@@ -138,10 +146,14 @@ export function dailyMuscleSetsForWeek(
     for (const ex of s.exercises) {
       const allocs = resolveMuscleAllocations(ex, userMappings);
       if (allocs.length === 0) continue;
+      const workingSets = countWorkingSets(ex);
       for (const { muscle, weightedSets } of allocs) {
         const cell = row.muscles[muscle];
         if (!cell) continue;
-        addExerciseToMuscleDayCell(cell, ex.name, weightedSets);
+        // If weightedSets < workingSets, this muscle got a reduced share → secondary
+        const role: "primary" | "secondary" =
+          workingSets > 0 && weightedSets < workingSets ? "secondary" : "primary";
+        addExerciseToMuscleDayCell(cell, ex.name, weightedSets, role);
       }
     }
   }

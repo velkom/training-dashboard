@@ -140,6 +140,29 @@ describe("dailyMuscleSetsForWeek", () => {
     expect(rows[0]!.date).toBe("2024-01-01");
     expect(rows[6]!.date).toBe("2024-01-07");
   });
+
+  it("marks secondary target muscles on daily exercise rows", () => {
+    const s = createSession({
+      startDate: "2024-01-02T12:00:00",
+      exercises: [
+        createExercise({
+          name: "Squat",
+          sets: [
+            createSet({ setNumber: 1, setType: "normal" }),
+            createSet({ setNumber: 2, setType: "normal" }),
+          ],
+        }),
+      ],
+    });
+    const rows = dailyMuscleSetsForWeek([s], WEEK_2024_01_01);
+    const dayKey = s.startDate.slice(0, 10);
+    const day = rows.find((r) => r.date === dayKey);
+    expect(day).toBeDefined();
+    const squatLower = day!.muscles.lower_back.exercises.find((e) => e.name === "Squat");
+    expect(squatLower?.role).toBe("secondary");
+    const squatQuads = day!.muscles.quads.exercises.find((e) => e.name === "Squat");
+    expect(squatQuads?.role).toBe("primary");
+  });
 });
 
 describe("weeklyMuscleSetsEndingAt", () => {
