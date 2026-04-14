@@ -5,9 +5,10 @@ import { useCallback, useMemo, useState } from "react";
 import { convertWithDetection, detectConverter, listConverters } from "@/lib/converters";
 import type { ImportParseNotes, WorkoutConverter } from "@/lib/converters/types";
 import { expandFiles } from "@/lib/extract-files";
+import type { MuscleMapEntry } from "@/lib/muscles";
 import type { UserId, WorkoutSession } from "@/types";
 
-export type ImportStep = "pick_files" | "preview" | "done";
+export type ImportStep = "pick_files" | "preview" | "review_mappings";
 
 export function useImportFlow(defaultUser: UserId = "nastya") {
   const [step, setStep] = useState<ImportStep>("pick_files");
@@ -22,6 +23,9 @@ export function useImportFlow(defaultUser: UserId = "nastya") {
   const [parseNotes, setParseNotes] = useState<ImportParseNotes | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expanding, setExpanding] = useState(false);
+  const [pendingMappings, setPendingMappings] = useState<
+    Record<string, MuscleMapEntry>
+  >({});
 
   const setFiles = useCallback(async (raw: File[]) => {
     setFilesRaw(raw);
@@ -62,6 +66,7 @@ export function useImportFlow(defaultUser: UserId = "nastya") {
     setParseNotes(null);
     setError(null);
     setConverterOverride(undefined);
+    setPendingMappings({});
   }, []);
 
   const runParse = useCallback(async () => {
@@ -110,5 +115,7 @@ export function useImportFlow(defaultUser: UserId = "nastya") {
     reset,
     runParse,
     expanding,
+    pendingMappings,
+    setPendingMappings,
   };
 }

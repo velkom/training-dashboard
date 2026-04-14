@@ -8,6 +8,7 @@ import {
   resolveMuscleAllocations,
   SECONDARY_SET_WEIGHT,
   statusFromWeeklySets,
+  type MuscleMapEntry,
 } from "@/lib/muscles";
 import { weeklyMuscleBucketForWeek } from "@/lib/workout-stats";
 import { createExercise, createSession, createSet } from "@/test-utils/factories";
@@ -134,6 +135,61 @@ describe("resolveMuscleAllocations", () => {
       { muscle: "glutes", weightedSets: 4 },
       { muscle: "lower_back", weightedSets: 2 },
       { muscle: "hamstrings", weightedSets: 2 },
+    ]);
+  });
+
+  it("user mapping resolves when not in curated map", () => {
+    const ex = createExercise({
+      name: "Custom Press",
+      sets: Array.from({ length: 4 }, (_, i) =>
+        createSet({ setNumber: i + 1, setType: "normal" }),
+      ),
+    });
+    const userMappings: Record<string, MuscleMapEntry> = {
+      "custom press": { primary: ["chest"], secondary: ["triceps"] },
+    };
+    expect(resolveMuscleAllocations(ex, userMappings)).toEqual([
+      { muscle: "chest", weightedSets: 4 },
+      { muscle: "triceps", weightedSets: 4 * SECONDARY_SET_WEIGHT },
+    ]);
+  });
+
+  it("curated map still wins over user mapping", () => {
+    const ex = createExercise({
+      name: "Barbell Bench Press",
+      sets: Array.from({ length: 3 }, (_, i) =>
+        createSet({ setNumber: i + 1, setType: "normal" }),
+      ),
+    });
+    const userMappings: Record<string, MuscleMapEntry> = {
+      "barbell bench press": { primary: ["quads"], secondary: [] },
+    };
+    const allocs = resolveMuscleAllocations(ex, userMappings);
+    expect(allocs).toEqual(
+      expect.arrayContaining([
+        { muscle: "chest", weightedSets: 3 },
+        { muscle: "front_delts", weightedSets: 1.5 },
+        { muscle: "triceps", weightedSets: 1.5 },
+      ]),
+    );
+    expect(allocs).toHaveLength(3);
+    expect(allocs.some((a) => a.muscle === "quads")).toBe(false);
+  });
+
+  it("user mapping wins over structured import data", () => {
+    const ex = createExercise({
+      name: "Custom Thing",
+      importPrimaryMuscles: ["Shoulders"],
+      importSecondaryMuscles: [],
+      sets: Array.from({ length: 3 }, (_, i) =>
+        createSet({ setNumber: i + 1, setType: "normal" }),
+      ),
+    });
+    const userMappings: Record<string, MuscleMapEntry> = {
+      "custom thing": { primary: ["chest"], secondary: [] },
+    };
+    expect(resolveMuscleAllocations(ex, userMappings)).toEqual([
+      { muscle: "chest", weightedSets: 3 },
     ]);
   });
 

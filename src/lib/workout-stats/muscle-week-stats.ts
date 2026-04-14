@@ -5,6 +5,7 @@ import {
   MUSCLE_IDS,
   resolveMuscleAllocations,
   type MuscleId,
+  type MuscleMapEntry,
   type MuscleSetsRecord,
 } from "@/lib/muscles";
 import type { WorkoutSession } from "@/types";
@@ -23,10 +24,11 @@ export type WeeklyMuscleBucket = {
 function addSessionToWeeklyMuscleBucket(
   bucket: WeeklyMuscleBucket,
   session: WorkoutSession,
+  userMappings?: Record<string, MuscleMapEntry>,
 ): void {
   for (const ex of session.exercises) {
     const vol = exerciseVolumeKg(ex);
-    const allocs = resolveMuscleAllocations(ex);
+    const allocs = resolveMuscleAllocations(ex, userMappings);
     const workingSets = countWorkingSets(ex);
 
     if (allocs.length === 0 && workingSets > 0) {
@@ -55,6 +57,7 @@ function addSessionToWeeklyMuscleBucket(
 export function weeklyMuscleBucketForWeek(
   sessions: WorkoutSession[],
   weekStart: string,
+  userMappings?: Record<string, MuscleMapEntry>,
 ): WeeklyMuscleBucket {
   const bucket: WeeklyMuscleBucket = {
     weekStart,
@@ -63,7 +66,7 @@ export function weeklyMuscleBucketForWeek(
   };
   const scoped = filterSessionsByWeek(sessions, weekStart);
   for (const s of scoped) {
-    addSessionToWeeklyMuscleBucket(bucket, s);
+    addSessionToWeeklyMuscleBucket(bucket, s, userMappings);
   }
   return bucket;
 }
@@ -109,6 +112,7 @@ function addExerciseToMuscleDayCell(
 export function dailyMuscleSetsForWeek(
   sessions: WorkoutSession[],
   weekStart: string,
+  userMappings?: Record<string, MuscleMapEntry>,
 ): DailyMuscleBreakdown {
   const dates: string[] = [];
   for (let i = 0; i < 7; i++) {
@@ -132,7 +136,7 @@ export function dailyMuscleSetsForWeek(
     if (!row) continue;
 
     for (const ex of s.exercises) {
-      const allocs = resolveMuscleAllocations(ex);
+      const allocs = resolveMuscleAllocations(ex, userMappings);
       if (allocs.length === 0) continue;
       for (const { muscle, weightedSets } of allocs) {
         const cell = row.muscles[muscle];
@@ -153,6 +157,7 @@ export function weeklyMuscleSetsEndingAt(
   sessions: WorkoutSession[],
   endWeekStart: string,
   weeks: number,
+  userMappings?: Record<string, MuscleMapEntry>,
 ): WeeklyMuscleBucket[] {
   const endMonday = new Date(endWeekStart + "T00:00:00");
   const buckets: WeeklyMuscleBucket[] = [];
@@ -170,7 +175,7 @@ export function weeklyMuscleSetsEndingAt(
       const start = new Date(b.weekStart + "T00:00:00").getTime();
       const end = start + 7 * 86400000;
       if (t >= start && t < end) {
-        addSessionToWeeklyMuscleBucket(b, s);
+        addSessionToWeeklyMuscleBucket(b, s, userMappings);
         break;
       }
     }
@@ -185,6 +190,12 @@ export function weeklyMuscleSetsEndingAt(
 export function weeklyMuscleSets(
   sessions: WorkoutSession[],
   weeks = 12,
+  userMappings?: Record<string, MuscleMapEntry>,
 ): WeeklyMuscleBucket[] {
-  return weeklyMuscleSetsEndingAt(sessions, getWeekStart(new Date()), weeks);
+  return weeklyMuscleSetsEndingAt(
+    sessions,
+    getWeekStart(new Date()),
+    weeks,
+    userMappings,
+  );
 }

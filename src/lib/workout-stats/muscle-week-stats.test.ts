@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { normalizeExerciseName, type MuscleMapEntry } from "@/lib/muscles";
 import { createExercise, createSession, createSet } from "@/test-utils/factories";
 
 import {
@@ -83,6 +84,29 @@ describe("weeklyMuscleBucketForWeek", () => {
       b.muscles.lower_back.volume +
       b.muscles.hamstrings.volume;
     expect(volSum).toBeCloseTo(1000, 5);
+  });
+
+  it("credits muscles from user mappings when provided", () => {
+    const s = createSession({
+      startDate: "2024-01-02T12:00:00.000Z",
+      exercises: [
+        createExercise({
+          name: "Unknown Thing",
+          sets: Array.from({ length: 5 }, (_, i) =>
+            createSet({ setNumber: i + 1, setType: "normal" }),
+          ),
+        }),
+      ],
+    });
+    const userMappings: Record<string, MuscleMapEntry> = {
+      [normalizeExerciseName("Unknown Thing")]: {
+        primary: ["chest"],
+        secondary: [],
+      },
+    };
+    const b = weeklyMuscleBucketForWeek([s], WEEK_2024_01_01, userMappings);
+    expect(b.muscles.chest.sets).toBe(5);
+    expect(b.unmappedExercises).toEqual([]);
   });
 });
 

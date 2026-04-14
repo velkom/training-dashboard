@@ -4,6 +4,7 @@ import {
   statusFromWeeklySets,
   statusSortKey,
   type MuscleId,
+  type MuscleMapEntry,
   type TrainingStatus,
 } from "@/lib/muscles";
 import type { WorkoutSession } from "@/types";
@@ -125,9 +126,18 @@ export function buildMuscleExerciseRows(
 export function computeWeeklyMuscleStats(
   sessions: WorkoutSession[],
   selectedWeek: string,
+  userMappings?: Record<string, MuscleMapEntry>,
 ): WeeklyMuscleStats {
-  const bucket = weeklyMuscleBucketForWeek(sessions, selectedWeek);
-  const dailyBreakdown = dailyMuscleSetsForWeek(sessions, selectedWeek);
+  const bucket = weeklyMuscleBucketForWeek(
+    sessions,
+    selectedWeek,
+    userMappings,
+  );
+  const dailyBreakdown = dailyMuscleSetsForWeek(
+    sessions,
+    selectedWeek,
+    userMappings,
+  );
 
   const trainedMuscleIds = new Set<MuscleId>(
     MUSCLE_IDS.filter((id) => bucket.muscles[id].sets > 0),

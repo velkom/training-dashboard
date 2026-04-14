@@ -159,11 +159,13 @@ export function allocateFromStructuredImportData(
  * Resolve which muscles get credit for this exercise's working sets.
  *
  * Layer 1: Curated EXERCISE_MUSCLE_MAP (highest precision, always wins).
+ * Layer 1.5: User-defined mappings (`userMappings`, keyed by {@link normalizeExerciseName}).
  * Layer 2: Structured import data (primary/secondary from source app, 1.0/0.5 model).
  * Layer 3: Unmapped — zero credit.
  */
 export function resolveMuscleAllocations(
   exercise: WorkoutExercise,
+  userMappings?: Record<string, MuscleMapEntry>,
 ): MuscleAllocation[] {
   const workingSets = countWorkingSets(exercise);
   if (workingSets === 0) return [];
@@ -173,6 +175,14 @@ export function resolveMuscleAllocations(
   if (mapped) {
     const allocs = allocateFromExerciseMapEntry(mapped, workingSets);
     if (allocs.length > 0) return allocs;
+  }
+
+  // Layer 1.5: User-defined exercise → muscle map
+  const key = normalizeExerciseName(exercise.name);
+  const userEntry = userMappings?.[key];
+  if (userEntry && userEntry.primary.length > 0) {
+    const fromUser = allocateFromExerciseMapEntry(userEntry, workingSets);
+    if (fromUser.length > 0) return fromUser;
   }
 
   // Layer 2: Structured import data (primary/secondary from source app)

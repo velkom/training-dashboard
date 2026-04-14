@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
+import { useUserExerciseMappingsStore } from "@/stores/user-exercise-mappings";
 import { useWorkoutStore } from "@/stores/workout-store";
 
 /**
@@ -13,6 +14,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     useWorkoutStore.persist.rehydrate();
+    useUserExerciseMappingsStore.persist.rehydrate();
     void refresh();
   }, [refresh]);
 

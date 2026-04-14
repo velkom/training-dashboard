@@ -19,8 +19,15 @@ export {
   allocateFromStructuredImportData,
   countWorkingSets,
   exerciseVolumeKg,
+  getStructuredImportMapEntry,
   resolveMuscleAllocations,
 } from "./allocation";
+export {
+  analyzeExerciseMappings,
+  type ExerciseMappingInfo,
+  type MappingAnalysisResult,
+  type MappingSource,
+} from "./exercise-mapping-analysis";
 export { EXERCISE_MUSCLE_MAP, lookupExerciseMap, normalizeExerciseName } from "./exercise-map";
 export { emptyMuscleRecord, STATUS_LABELS, statusFromWeeklySets } from "./status";
 export {

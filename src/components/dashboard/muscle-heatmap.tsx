@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { MUSCLE_CATEGORIES, MUSCLE_LABELS, type MuscleId } from "@/lib/muscles";
 import { filterSessions, weeklyMuscleSets } from "@/lib/workout-stats";
 import type { UserFilter } from "@/lib/workout-stats";
+import { useUserExerciseMappingsStore } from "@/stores/user-exercise-mappings";
 import type { WorkoutSession } from "@/types";
 
 type MuscleHeatmapProps = {
@@ -30,7 +31,11 @@ export function MuscleHeatmap({
   weeks = 12,
 }: MuscleHeatmapProps) {
   const scoped = filterSessions(sessions, user);
-  const buckets = useMemo(() => weeklyMuscleSets(scoped, weeks), [scoped, weeks]);
+  const userMappings = useUserExerciseMappingsStore((s) => s.mappings);
+  const buckets = useMemo(
+    () => weeklyMuscleSets(scoped, weeks, userMappings),
+    [scoped, weeks, userMappings],
+  );
 
   const weekLabels = useMemo(
     () =>

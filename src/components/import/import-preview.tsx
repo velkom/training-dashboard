@@ -27,18 +27,16 @@ type ImportPreviewProps = {
   sessions: WorkoutSession[];
   converterName: string;
   parseNotes?: ImportParseNotes | null;
-  onConfirm: () => Promise<void>;
+  onContinueToReview: () => void;
   onBack: () => void;
-  isSaving?: boolean;
 };
 
 export function ImportPreview({
   sessions,
   converterName,
   parseNotes,
-  onConfirm,
+  onContinueToReview,
   onBack,
-  isSaving,
 }: ImportPreviewProps) {
   const existing = useWorkoutStore((s) => s.sessions);
 
@@ -128,8 +126,8 @@ export function ImportPreview({
           <Button type="button" variant="outline" onClick={onBack}>
             Back
           </Button>
-          <Button type="button" onClick={() => void onConfirm()} disabled={isSaving}>
-            {isSaving ? "Saving…" : "Import"}
+          <Button type="button" onClick={onContinueToReview}>
+            Next: Review mappings
           </Button>
         </div>
       </CardContent>

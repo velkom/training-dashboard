@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { FileDropzone } from "@/components/import/file-dropzone";
 import { FormatSelector } from "@/components/import/format-selector";
 import { ImportPreview } from "@/components/import/import-preview";
+import { MappingReview } from "@/components/import/mapping-review";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useImportFlow } from "@/hooks/use-import";
+import { useUserExerciseMappingsStore } from "@/stores/user-exercise-mappings";
 import { useSelectedUser, useWorkoutStore } from "@/stores/workout-store";
 import type { UserId } from "@/types";
 
@@ -36,7 +38,37 @@ export default function ImportPage() {
       : "nastya";
   const flow = useImportFlow(defaultUser);
   const addImported = useWorkoutStore((s) => s.addImported);
+  const setUserMapping = useUserExerciseMappingsStore((s) => s.setMapping);
+  const removeUserMapping = useUserExerciseMappingsStore((s) => s.removeMapping);
   const [saving, setSaving] = useState(false);
+
+  async function runImport(savePendingMappings: boolean): Promise<void> {
+    setSaving(true);
+    try {
+      if (savePendingMappings) {
+        for (const [normalizedName, entry] of Object.entries(
+          flow.pendingMappings,
+        )) {
+          if (entry.primary.length > 0) {
+            setUserMapping(normalizedName, entry);
+          } else {
+            removeUserMapping(normalizedName);
+          }
+        }
+      }
+      const res = await addImported(flow.preview);
+      toast.success(
+        `Import complete: added ${res.added}, skipped ${res.skipped}.`,
+      );
+      flow.reset();
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Could not save import",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-8 px-4 py-8">
@@ -48,7 +80,7 @@ export default function ImportPage() {
         </p>
       </div>
 
-      {flow.step !== "preview" ? (
+      {flow.step === "pick_files" ? (
         <Card className="border-border/80 bg-card/60 backdrop-blur-sm">
           <CardHeader>
             <CardTitle>Files</CardTitle>
@@ -139,31 +171,29 @@ export default function ImportPage() {
             </div>
           </CardContent>
         </Card>
-      ) : (
+      ) : null}
+
+      {flow.step === "preview" ? (
         <ImportPreview
           sessions={flow.preview}
           converterName={flow.activeConverter?.name ?? "—"}
           parseNotes={flow.parseNotes}
-          isSaving={saving}
           onBack={() => flow.setStep("pick_files")}
-          onConfirm={async () => {
-            setSaving(true);
-            try {
-              const res = await addImported(flow.preview);
-              toast.success(
-                `Import complete: added ${res.added}, skipped ${res.skipped}.`,
-              );
-              flow.reset();
-            } catch (e) {
-              toast.error(
-                e instanceof Error ? e.message : "Could not save import",
-              );
-            } finally {
-              setSaving(false);
-            }
-          }}
+          onContinueToReview={() => flow.setStep("review_mappings")}
         />
-      )}
+      ) : null}
+
+      {flow.step === "review_mappings" ? (
+        <MappingReview
+          sessions={flow.preview}
+          pendingMappings={flow.pendingMappings}
+          setPendingMappings={flow.setPendingMappings}
+          onBack={() => flow.setStep("preview")}
+          isSaving={saving}
+          onSkip={() => runImport(false)}
+          onConfirm={() => runImport(true)}
+        />
+      ) : null}
     </div>
   );
 }

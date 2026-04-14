@@ -17,6 +17,7 @@ import {
   weeklyMuscleSetsEndingAt,
 } from "@/lib/workout-stats";
 import type { UserFilter } from "@/lib/workout-stats";
+import { useUserExerciseMappingsStore } from "@/stores/user-exercise-mappings";
 import type { WorkoutSession } from "@/types";
 
 type MuscleGroupCardsProps = {
@@ -38,14 +39,16 @@ export function MuscleGroupCards({
   sparkWeeks = 8,
 }: MuscleGroupCardsProps) {
   const scoped = filterSessions(sessions, user);
+  const userMappings = useUserExerciseMappingsStore((s) => s.mappings);
   const buckets = useMemo(
     () =>
       weeklyMuscleSetsEndingAt(
         scoped,
         selectedWeek,
         Math.max(12, sparkWeeks),
+        userMappings,
       ),
-    [scoped, selectedWeek, sparkWeeks],
+    [scoped, selectedWeek, sparkWeeks, userMappings],
   );
 
   const currentIdx = buckets.length - 1;
