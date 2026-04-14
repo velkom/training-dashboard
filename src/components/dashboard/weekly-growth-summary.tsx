@@ -1,17 +1,19 @@
 "use client";
 
-import { ChevronDown, ChevronUp } from "lucide-react";
+import {
+  ArrowUp,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
+  MUSCLE_CATEGORIES,
   MUSCLE_IDS,
   MUSCLE_LABELS,
   SETS_GROWTH_MIN,
-  SETS_MAINTENANCE_MIN,
   STATUS_LABELS,
   statusFromWeeklySets,
   type MuscleId,
@@ -29,21 +31,6 @@ type WeeklyGrowthSummaryProps = {
 
 /** Track width represents up to this many effective sets (150% of growth target). */
 const BAR_SCALE_MAX_SETS = SETS_GROWTH_MIN * 1.5;
-
-function statusStyles(status: TrainingStatus): string {
-  switch (status) {
-    case "growing":
-      return "text-fitness-growing border-fitness-growing/40 bg-fitness-growing/10";
-    case "maintaining":
-      return "text-fitness-maintaining border-fitness-maintaining/40 bg-fitness-maintaining/10";
-    case "under":
-      return "text-fitness-under border-fitness-under/40 bg-fitness-under/10";
-    default: {
-      const _exhaustive: never = status;
-      return _exhaustive;
-    }
-  }
-}
 
 function barFillClass(status: TrainingStatus): string {
   switch (status) {
@@ -153,7 +140,7 @@ function MuscleExerciseDetail({
   if (rows.length === 0) return null;
 
   return (
-    <div className="mt-2 space-y-3 rounded-md border border-border/50 bg-muted/20 p-3 text-xs">
+    <div className="space-y-3 text-xs">
       <ul className="space-y-3">
         {rows.map((row) => (
           <li key={row.name} className="space-y-1.5">
@@ -175,7 +162,7 @@ function MuscleExerciseDetail({
             </p>
             <div className="h-1 w-full overflow-hidden rounded-full bg-muted/70">
               <div
-                className="h-full rounded-full bg-primary/75 transition-all"
+                className="h-full rounded-full bg-primary/75 transition-[width] duration-200 ease-out"
                 style={{ width: `${Math.min(100, row.pctOfTotal)}%` }}
               />
             </div>
@@ -183,17 +170,18 @@ function MuscleExerciseDetail({
         ))}
       </ul>
       {status !== "growing" ? (
-        <p
+        <div
           className={cn(
-            "border-t border-border/40 pt-3 text-xs leading-relaxed",
+            "mt-3 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium",
             status === "under"
-              ? "text-fitness-under/90"
-              : "text-fitness-maintaining/90",
+              ? "border-fitness-under/20 bg-fitness-under/8 text-fitness-under"
+              : "border-fitness-maintaining/20 bg-fitness-maintaining/8 text-fitness-maintaining",
           )}
         >
-          Add ~{gapToGrowth} more set{gapToGrowth === 1 ? "" : "s"} this week to
-          reach growth range.
-        </p>
+          <ArrowUp className="size-3.5 shrink-0 opacity-75" aria-hidden />
+          Add ~{gapToGrowth} more set{gapToGrowth === 1 ? "" : "s"} to reach
+          growth range
+        </div>
       ) : null}
     </div>
   );
@@ -220,7 +208,7 @@ function GrowthProgressBar({
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
         <div
           className={cn(
-            "h-full rounded-full transition-all",
+            "h-full rounded-full transition-[width] duration-200 ease-out",
             barFillClass(status),
           )}
           style={{ width: `${fillPct}%` }}
@@ -231,6 +219,65 @@ function GrowthProgressBar({
         style={{ left: `${tickPct}%`, transform: "translateX(-50%)" }}
         aria-hidden
       />
+    </div>
+  );
+}
+
+function GrowthRingGauge({
+  growingCount,
+  trainedCount,
+}: {
+  growingCount: number;
+  trainedCount: number;
+}) {
+  const ringPct =
+    trainedCount > 0 ? (growingCount / trainedCount) * 100 : 0;
+  const circumference = 100;
+  const offset = circumference - ringPct;
+
+  return (
+    <div
+      className="relative flex h-14 w-14 shrink-0 items-center justify-center"
+      aria-label={`${growingCount} of ${trainedCount} trained muscles in growth range`}
+    >
+      <svg
+        viewBox="0 0 36 36"
+        className="absolute inset-0 size-full rotate-[-90deg]"
+        aria-hidden
+      >
+        <circle
+          cx="18"
+          cy="18"
+          r="15.915"
+          fill="none"
+          className="stroke-muted/20"
+          strokeWidth={5}
+        />
+        <circle
+          cx="18"
+          cy="18"
+          r="15.915"
+          fill="none"
+          className="stroke-fitness-growing"
+          strokeWidth={5}
+          strokeLinecap="round"
+          strokeDasharray="100"
+          strokeDashoffset={offset}
+          pathLength={100}
+          style={{
+            transition:
+              "stroke-dashoffset 0.8s cubic-bezier(0.2, 0, 0, 1)",
+          }}
+        />
+      </svg>
+      <div className="pointer-events-none relative z-10 flex items-baseline justify-center gap-0.5 tabular-nums">
+        <span className="text-[13px] font-bold leading-none text-foreground">
+          {growingCount}
+        </span>
+        <span className="text-[10px] font-semibold leading-none text-muted-foreground">
+          /{trainedCount}
+        </span>
+      </div>
     </div>
   );
 }
@@ -259,18 +306,53 @@ export function WeeklyGrowthSummary({
     return { growingCount: growing, trainedCount: trained };
   }, [bucket]);
 
-  const sortedTrainedMuscles = useMemo(() => {
-    const ids = MUSCLE_IDS.filter((id) => trainedMuscleIds.has(id));
-    return ids.sort((a, b) => {
-      const sa = bucket.muscles[a].sets;
-      const sb = bucket.muscles[b].sets;
-      const sta = statusFromWeeklySets(sa);
-      const stb = statusFromWeeklySets(sb);
-      const ka = statusSortKey(sta);
-      const kb = statusSortKey(stb);
-      if (ka !== kb) return ka - kb;
-      return sa - sb;
-    });
+  const statusCounts = useMemo(() => {
+    let growing = 0;
+    let maintaining = 0;
+    let under = 0;
+    for (const id of MUSCLE_IDS) {
+      const sets = bucket.muscles[id].sets;
+      if (sets <= 0) continue;
+      const s = statusFromWeeklySets(sets);
+      if (s === "growing") growing++;
+      else if (s === "maintaining") maintaining++;
+      else under++;
+    }
+    return { growing, maintaining, under };
+  }, [bucket]);
+
+  const groupedMuscles = useMemo(() => {
+    const assigned = new Set<MuscleId>();
+    const groups: { id: string; label: string; muscles: MuscleId[] }[] = [];
+
+    for (const cat of MUSCLE_CATEGORIES) {
+      const shortLabel =
+        cat.id === "upper_push"
+          ? "Push"
+          : cat.id === "upper_pull"
+            ? "Pull"
+            : cat.label;
+      const trained = cat.muscles.filter((m) => trainedMuscleIds.has(m));
+      trained.sort((a, b) => {
+        const sa = bucket.muscles[a].sets;
+        const sb = bucket.muscles[b].sets;
+        const ka = statusSortKey(statusFromWeeklySets(sa));
+        const kb = statusSortKey(statusFromWeeklySets(sb));
+        if (ka !== kb) return ka - kb;
+        return sa - sb;
+      });
+      if (trained.length > 0) {
+        groups.push({ id: cat.id, label: shortLabel, muscles: trained });
+        for (const m of trained) assigned.add(m);
+      }
+    }
+
+    const orphans = [...trainedMuscleIds].filter((m) => !assigned.has(m));
+    if (orphans.length > 0) {
+      groups.push({ id: "other", label: "Other", muscles: orphans });
+    }
+
+    return groups;
   }, [bucket, trainedMuscleIds]);
 
   const hasAnyTrainedMuscle = trainedCount > 0;
@@ -278,54 +360,54 @@ export function WeeklyGrowthSummary({
   return (
     <Card className="border-border/80">
       <CardHeader className="space-y-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <CardTitle>Weekly growth stimulus</CardTitle>
+        <div className="flex items-start gap-4">
           {hasAnyTrainedMuscle ? (
-            <Badge
-              variant="outline"
-              className="h-auto shrink-0 border-fitness-growing/30 bg-fitness-growing/15 px-2.5 py-1 text-xs font-semibold text-fitness-growing"
-            >
-              {growingCount} of {trainedCount} muscle
-              {trainedCount === 1 ? "" : "s"} growing
-            </Badge>
+            <GrowthRingGauge
+              growingCount={growingCount}
+              trainedCount={trainedCount}
+            />
           ) : null}
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Effective working sets vs a {SETS_GROWTH_MIN}+ sets / week growth
-          target per muscle you trained.
-          {!hasAnyTrainedMuscle ? (
-            <> No muscle-tagged working volume logged this week.</>
-          ) : null}
-        </p>
-        {hasAnyTrainedMuscle ? (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <span
-                className="size-2 shrink-0 rounded-full bg-fitness-growing"
-                aria-hidden
-              />
-              <span>
-                Growing: {SETS_GROWTH_MIN}+ sets
-              </span>
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span
-                className="size-2 shrink-0 rounded-full bg-fitness-maintaining"
-                aria-hidden
-              />
-              <span>
-                Maintaining: {SETS_MAINTENANCE_MIN}–{SETS_GROWTH_MIN - 1} sets
-              </span>
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span
-                className="size-2 shrink-0 rounded-full bg-fitness-under"
-                aria-hidden
-              />
-              <span>Under-trained: &lt;{SETS_MAINTENANCE_MIN} sets</span>
-            </span>
+          <div className="min-w-0 flex-1 space-y-2">
+            <CardTitle>Weekly growth stimulus</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Effective working sets vs a {SETS_GROWTH_MIN}+ sets / week growth
+              target per muscle you trained.
+              {!hasAnyTrainedMuscle ? (
+                <> No muscle-tagged working volume logged this week.</>
+              ) : null}
+            </p>
+            {hasAnyTrainedMuscle ? (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {statusCounts.growing > 0 ? (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full border border-fitness-growing/20 bg-fitness-growing/8 px-2.5 py-1 text-[11px] font-medium tabular-nums text-fitness-growing"
+                  >
+                    <span className="font-semibold">{statusCounts.growing}</span>
+                    {STATUS_LABELS.growing}
+                  </span>
+                ) : null}
+                {statusCounts.maintaining > 0 ? (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full border border-fitness-maintaining/20 bg-fitness-maintaining/8 px-2.5 py-1 text-[11px] font-medium tabular-nums text-fitness-maintaining"
+                  >
+                    <span className="font-semibold">
+                      {statusCounts.maintaining}
+                    </span>
+                    {STATUS_LABELS.maintaining}
+                  </span>
+                ) : null}
+                {statusCounts.under > 0 ? (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full border border-fitness-under/20 bg-fitness-under/8 px-2.5 py-1 text-[11px] font-medium tabular-nums text-fitness-under"
+                  >
+                    <span className="font-semibold">{statusCounts.under}</span>
+                    {STATUS_LABELS.under}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
-        ) : null}
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {!hasAnyTrainedMuscle ? (
@@ -336,73 +418,122 @@ export function WeeklyGrowthSummary({
         ) : null}
 
         {hasAnyTrainedMuscle ? (
-          <ul className="space-y-3">
-            {sortedTrainedMuscles.map((muscle) => {
-              const sets = bucket.muscles[muscle].sets;
-              const status = statusFromWeeklySets(sets);
-              const expanded = expandedMuscle === muscle;
+          <div key={bucket.weekStart} className="space-y-5">
+            {groupedMuscles.map((group, i) => {
+              const catTotalSets = group.muscles.reduce(
+                (sum, m) => sum + bucket.muscles[m].sets,
+                0,
+              );
 
               return (
-                <li key={muscle} className="rounded-lg border border-transparent">
-                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-4">
-                    <div className="min-w-0 space-y-1.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto min-w-0 flex-1 justify-start gap-1.5 px-1 py-0.5 text-left font-medium"
-                          aria-expanded={expanded}
-                          aria-controls={`muscle-detail-${muscle}`}
-                          id={`muscle-row-${muscle}`}
-                          onClick={() =>
-                            setExpandedMuscle((prev) =>
-                              prev === muscle ? null : muscle,
-                            )
-                          }
-                        >
-                          {expanded ? (
-                            <ChevronUp className="size-4 shrink-0 opacity-70" />
-                          ) : (
-                            <ChevronDown className="size-4 shrink-0 opacity-70" />
-                          )}
-                          <span className="truncate">
-                            {MUSCLE_LABELS[muscle]}
-                          </span>
-                        </Button>
-                        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                          {formatSets(sets)} sets
-                        </span>
-                      </div>
-                      <GrowthProgressBar sets={sets} status={status} />
-                      {expanded ? (
-                        <div
-                          id={`muscle-detail-${muscle}`}
-                          role="region"
-                          aria-labelledby={`muscle-row-${muscle}`}
-                        >
-                          <MuscleExerciseDetail
-                            muscle={muscle}
-                            dailyBreakdown={dailyBreakdown}
-                            muscleWeeklySets={sets}
-                            status={status}
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-                    <span
-                      className={cn(
-                        "justify-self-start rounded-full border px-2 py-0.5 text-[10px] font-medium leading-tight sm:justify-self-end sm:pt-0.5",
-                        statusStyles(status),
-                      )}
-                    >
-                      {STATUS_LABELS[status]}
+                <div
+                  key={group.id}
+                  style={{
+                    animation: `fadeSlideIn 350ms cubic-bezier(0.2, 0, 0, 1) ${i * 60}ms both`,
+                  }}
+                >
+                  <div className="mb-2 flex items-center justify-between px-0.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {group.label}
+                    </span>
+                    <span className="text-[10px] tabular-nums text-muted-foreground">
+                      {Math.round(catTotalSets)} total sets
                     </span>
                   </div>
-                </li>
+                  <div className="overflow-hidden rounded-xl border border-border/50 bg-card">
+                    <div className="divide-y divide-border/50">
+                      {group.muscles.map((muscle) => {
+                        const sets = bucket.muscles[muscle].sets;
+                        const status = statusFromWeeklySets(sets);
+                        const expanded = expandedMuscle === muscle;
+
+                        return (
+                          <div key={muscle}>
+                            <button
+                              type="button"
+                              id={`muscle-row-${muscle}`}
+                              aria-expanded={expanded}
+                              aria-controls={`muscle-detail-${muscle}`}
+                              className={cn(
+                                "grid w-full grid-cols-[1fr_auto_auto] items-center gap-3 px-3.5 py-2.5 text-left font-medium text-foreground transition-[background-color] duration-150",
+                                "hover:bg-foreground/[0.03] active:bg-foreground/[0.05]",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                expanded && "bg-foreground/[0.03]",
+                              )}
+                              onClick={() =>
+                                setExpandedMuscle((prev) =>
+                                  prev === muscle ? null : muscle,
+                                )
+                              }
+                            >
+                              <div className="min-w-0 space-y-1.5">
+                                <div className="flex min-w-0 items-center gap-1.5">
+                                  {expanded ? (
+                                    <ChevronUp
+                                      className="size-4 shrink-0 opacity-70"
+                                      aria-hidden
+                                    />
+                                  ) : (
+                                    <ChevronDown
+                                      className="size-4 shrink-0 opacity-70"
+                                      aria-hidden
+                                    />
+                                  )}
+                                  <span className="truncate">
+                                    {MUSCLE_LABELS[muscle]}
+                                  </span>
+                                  <span className="sr-only">
+                                    {`, ${STATUS_LABELS[status]}`}
+                                  </span>
+                                </div>
+                                <GrowthProgressBar sets={sets} status={status} />
+                              </div>
+                              <div className="shrink-0 whitespace-nowrap">
+                                <span className="text-sm font-semibold tabular-nums">
+                                  {formatSets(sets)}
+                                </span>
+                                <span className="ml-0.5 text-[10px] text-muted-foreground">
+                                  sets
+                                </span>
+                              </div>
+                              <span
+                                className={cn(
+                                  "size-2 shrink-0 rounded-full",
+                                  status === "growing" &&
+                                    "bg-fitness-growing shadow-[0_0_6px_var(--color-fitness-growing)]/20",
+                                  status === "maintaining" &&
+                                    "bg-fitness-maintaining shadow-[0_0_6px_var(--color-fitness-maintaining)]/20",
+                                  status === "under" &&
+                                    "bg-fitness-under shadow-[0_0_6px_var(--color-fitness-under)]/20",
+                                )}
+                                title={STATUS_LABELS[status]}
+                                aria-hidden
+                              />
+                            </button>
+                            {expanded ? (
+                              <div
+                                id={`muscle-detail-${muscle}`}
+                                role="region"
+                                aria-labelledby={`muscle-row-${muscle}`}
+                                className="border-t border-border/50 bg-background/50 px-3.5 py-3"
+                              >
+                                <MuscleExerciseDetail
+                                  muscle={muscle}
+                                  dailyBreakdown={dailyBreakdown}
+                                  muscleWeeklySets={sets}
+                                  status={status}
+                                />
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               );
             })}
-          </ul>
+          </div>
         ) : null}
       </CardContent>
     </Card>
